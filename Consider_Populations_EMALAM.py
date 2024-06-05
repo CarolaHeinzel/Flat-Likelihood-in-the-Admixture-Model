@@ -1,36 +1,3 @@
-def get_values_at_indices(lists, indices):
-    # Initialisierung eines Wörterbuchs für die Ergebnisse
-    result_dict = {}
-    
-    # Durch jede Unterliste und die entsprechenden Indizes iterieren
-    for k in range(len(lists[0])):
-        index = indices[k]
-        value = lists[k][index]
-        
-        # Aufsummieren der Werte für gleiche Indizes
-        if index in result_dict:
-            result_dict[index] += value
-        else:
-            result_dict[index] = value
-    
-    # Umwandeln des Wörterbuchs in eine Liste
-    result = [result_dict[i] if i in result_dict else 0 for i in range(len(lists[0]))]
-    
-    return result
-
-# Beispielhafte Listen
-lists = [
-    [1, 2, 3, 4, 5],  # erste Unterliste
-    [4, 5, 6, 5,6],  # zweite Unterliste
-    [7, 8, 9, 7,7]   # dritte Unterliste
-]
-
-# Die Indizes, die verwendet werden sollen
-indices = [0, 0, 2]  # Beispielhafte Indizes
-result = get_values_at_indices(umschreiben(lists), indices)
-
-print("Das Ergebnis ist:", result)
-#%%
 def get_indices_of_max_values_from_multiple_lists(*matrices):
     # Initialisierung der Ergebnisliste
     result = []
@@ -48,32 +15,18 @@ def get_indices_of_max_values_from_multiple_lists(*matrices):
         result.append(max_index)
     
     return result
-
-# Beispielhafte Matrizen
 matrix1 = [
     [0.402, 0.297, 0.3],
     [0.266, 0.352, 0.382],
     [0.365, 0.288, 0.347]
 ]
-
 matrix2 = [
     [0.1, 0.5, 0.3],
     [0.4, 0.2, 0.35],
     [0.32, 0.4, 0.33]
 ]
-
-# Weitere Matrizen können hier hinzugefügt werden
-matrix3 = [
-    [0.25, 0.35, 0.9],
-    [0.3, 0.45, 0.25],
-    [0.35, 0.25, 0.4]
-]
-
-# Aufruf der Funktion mit einer beliebigen Anzahl an Matrizen
-result = get_indices_of_max_values_from_multiple_lists(matrix1, matrix2, matrix3)
-
+result = get_indices_of_max_values_from_multiple_lists(matrix1, matrix2)
 print("Die Indizes der maximalen Werte sind:", result)
-
 #%%
 import itertools
 import numpy as np
@@ -96,19 +49,20 @@ from sympy import symbols, Matrix
 # in test_q1_K3_1.txt, ..., test_q1_K3_(2K).txt
 # Application
 # 1) Load Data, i.e. insert here the correct names for q and p
-file_path_p = 'p_values'
-file_path_q = 'q_values'
+#file_path_p = 'p_values'
+#file_path_q = 'q_values'
+file_path_q = 'C:\\Users\\carol\\Downloads\\q_migtration7_mutation1'
+file_path_p = 'C:\\Users\\carol\\Downloads\\p_migtration7_mutation1'
+
 # 2) Execute the functions
 #%%
 data_q = pd.read_csv(file_path_q, sep=' ', header=None)
 data_p = pd.read_csv(file_path_p, sep=' ', header=None)
-
-
+#%%
 def umschreiben(array):
     transponiert = np.transpose(array)
     umgeschrieben = transponiert.tolist()
     return umgeschrieben
-
 
 # Correct format of q and p for later
 def correct_format(data_q, data_p):
@@ -261,13 +215,14 @@ def algorithm_max(cons, A, b_vek,p_alle, K):
     '''
 
     res_ok = 10
-    value_range = [i * 0.01 for i in range(0,30)]
+    value_range = [i * 0.01 for i in range(0,5)]
     zero = find_zero_positions(cons)
     rep = K*(K-1) - len(zero) -( K-1)
     combinations = list(itertools.product(value_range, repeat= rep))
     param = [0]*K*(K-1)
     combi_0 = add_zeros_to_tuples(combinations, zero,K)
     for combi in combi_0:
+        #print("a")
         x_bounds = []
         for i in range(K*(K-1)):
             if(i < K-1):
@@ -355,7 +310,7 @@ def p_korrekt(p_alle, K, parameters):
     '''
     M = len(p_alle[0])
     matrix = create_matrix_p(K,parameters)
-    print(matrix)
+    #print(matrix)
     z = 0
     for i in range(M):
         temp = []
@@ -401,6 +356,14 @@ def tausche_erste_stelle(liste1):
         res.append(liste)
     return res
 
+def sum_selected_rows(matrix, K, indices):
+    N = len(indices)
+    result = np.zeros(len(matrix[0]))
+    for i in range(N):
+        row_index = 2*K * i + indices[i] * 2
+        result += matrix[row_index]
+    return result
+
 # Try every K IA of individual that should be maximized and minimized
 def repeat_algo(q_vectors, p_alle, indices):
     '''
@@ -419,14 +382,10 @@ def repeat_algo(q_vectors, p_alle, indices):
     '''
     res_a = []
     K = len(q_vectors)
-    
     A = create_A(q_vectors)
-    conse = get_values_at_indices(umschreiben(q_vectors), indices)
+    print("A",A, indices)
+    conse = sum_selected_rows(A,K, indices)
     b_vek = create_b(q_vectors)
-    # Minimieren
-    res = algorithm_min(conse, A, b_vek, p_alle, K)
-    res_a.append(res)
-    # Maximieren
     conse = np.multiply(conse, -1)
     res = algorithm_max(conse, A, b_vek, p_alle,K)
     res_a.append(res)
@@ -483,7 +442,6 @@ def rearrange_matrix(input_matrix):
     '''
     rows, cols = len(input_matrix), len(input_matrix[0])
     output_matrix = Matrix.zeros(cols, rows)
-
     for i in range(rows):
         for j in range(cols):
             output_matrix[j, i] = input_matrix[i][j]
@@ -527,23 +485,16 @@ def create_daten(q_alle, p_alle, K, param):
     res_p = []        
     matrix = create_matrix_bestimmt(K, param)
     matrix = np.array(matrix, dtype=np.float64)
-    #print(matrix)
     matrix_inv = np.linalg.inv(matrix)    
     N = len(q_alle[0])
     M = len(p_alle[0])
     q_anders = np.array(rearrange_matrix(q_alle))
-    #print("matrix",matrix_inv)
     p_anders = np.array(rearrange_matrix(p_alle))
-    #print(p_anders[1])
     for i in range(N):
-        #print(p_anders[i])
         q_temp = q_anders[i]@matrix
-        #print(q_temp)
         res_q.append(q_temp)
     for m in range(M):
-        #print(p_anders[m])
         p_temp = matrix_inv@p_anders[m]
-        #print(p_temp)
         res_p.append(p_temp) 
     return res_p, res_q
 
@@ -551,7 +502,7 @@ def create_daten(q_alle, p_alle, K, param):
 def transpose_matrix(input_matrix):
     return Matrix(input_matrix).transpose()
 
-def speichere_werte(temp, name, i):
+def speichere_werte(temp, name):
     '''
     
     Saves the output as txt.-file
@@ -570,7 +521,7 @@ def speichere_werte(temp, name, i):
     None.
 
     '''
-    dateipfad = f"{name}_{i}.txt"  # Füge i zum Dateinamen hinzu
+    dateipfad = f"{name}.txt"  # Füge i zum Dateinamen hinzu
     temp = transpose_matrix(temp)
     temp = temp.tolist()
     # Öffnen der Datei im Schreibmodus
@@ -602,23 +553,14 @@ def repeat_create_daten(q_alle, p_alle, K, parameters):
     None.
 
     '''
-    l = len(parameters)
-    q_tausch = tausche_erste_stelle(q_alle)
-    p_tausch = tausche_erste_stelle(p_alle)
-    t = 0
-    #for i in range(l):
-    for i in range(l):
-        if(i % 2 == 0):
-            q_temp = q_tausch[t]
-            p_temp = p_tausch[t]
-            t += 1
-        p,q = create_daten(q_temp, p_temp, K, parameters[i])
-        p = transpose_matrix(p)
-        q = transpose_matrix(q)
-        speichere_werte(q, "test_q1_K3", i)
-        speichere_werte(p, "test_p1_K3", i)
-    return
 
+    p,q = create_daten(q_alle, p_alle, K, parameters[0])
+    p = transpose_matrix(p)
+    q = transpose_matrix(q)
+    speichere_werte(q, "population_q1_30_K3")
+    speichere_werte(p, "population_p1_30_K3")
+    return
+#%%
 def algo_final(q_vectors, p_alle, K):
     '''
     Saves all values of q and p in .txt-file. For every calulated matrix
@@ -637,10 +579,10 @@ def algo_final(q_vectors, p_alle, K):
     None.
 
     '''
-    
     indices = get_indices_of_max_values_from_multiple_lists(umschreiben(q_vectors))
+    print(indices)
     temp = repeat_algo(q_vectors, p_alle, indices)
-    print("temp", temp)
+    print(temp)
     repeat_create_daten(q_alle, p_alle, K, temp)
     return
 
