@@ -2,14 +2,11 @@
 
 
 2 opportunities:
-1) Choose scipy and minimize (new version)
+1) Choose scipy and minimize (new version) (EMALAM_scipy.py=
 2) Choose the always valid algorithm EMALAM.py
-1) Application as in EMALAM.py
+For 1) Application as in EMALAM.py
   However, there is no opportunity to deal with label switching yet, i.e. researchers should change the constraints!
-
-
-
-3)
+For 2)
 algo_final(q_alle, p_alle, 3) in EMALAM.py is the main function, i.e. the function researchers execute. 
 
 The data 
