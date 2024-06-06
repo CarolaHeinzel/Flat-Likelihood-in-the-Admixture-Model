@@ -1,5 +1,10 @@
 # Flat-Likelihood-in-the-Admixture-Model
 
+Researchers can use different functions to maximize/minimize:
+(i) Maximize and minimize the IA for every individuals in every population
+(ii) Maximize the admixture
+(iii) Minimize the admixture
+
 
 2 opportunities:
 1) Choose scipy and minimize (new version) (EMALAM_scipy.py=
