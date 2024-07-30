@@ -1,18 +1,19 @@
 # Flat-Likelihood-in-the-Admixture-Model
 
+Here, we just describe briefly what the data in this repository is for. For detailed information, please read the Dokumentation.
+
 Researchers can use different functions to maximize/minimize:
-(i) Maximize and minimize the IA for every individuals in every population
-(ii) Maximize the admixture
-(iii) Minimize the admixture
+(I) Maximize and minimize the IA for every individuals in every population
+(II) Maximize the admixture
+(III) Minimize the admixture
 
 
-2 opportunities:
-1) Choose scipy and minimize (new version) (EMALAM_scipy.py=
-2) Choose the always valid algorithm EMALAM.py
-For 1) Application as in EMALAM.py
-  However, there is no opportunity to deal with label switching yet, i.e. researchers should change the constraints!
-For 2)
-algo_final(q_alle, p_alle, 3) in EMALAM.py is the main function, i.e. the function researchers execute. 
+EMALAM.py
+Example_Output_STRUCTURE
+Extract_p_J_arbitrary.R
+Extract_p_q.E
+Plot.png
+Dokumentation_EMALAM
 
 The data 
 
@@ -35,4 +36,6 @@ test_p1_K3_5.txt
 test_p1_K3_6.txt
 
 is the output.
+
+
 
