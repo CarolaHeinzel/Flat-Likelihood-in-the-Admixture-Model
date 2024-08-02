@@ -7,9 +7,9 @@ Researchers can use different functions to maximize/minimize: <br>
 (II) Maximize the admixture<br>
 (III) Minimize the admixture <br>
 
-This Repository contains <br>
+This repository contains <br>
 
-EMALAM_inkl_J.py: EMALAM, code that the user has to run
+EMALAM_incl_J.py: EMALAM, code that the user has to run  <br>
 Example_Output_STRUCTURE: Example Output of STRUCTURE <br>
 Extract_p_J_arbitrary.R: Extract the estimated p in the output of STRUCTURE for J \geq 3 <br>
 Extract_p_q.R: Extract the estimated p and estimated q in the output of STRUCTURE for J = 2 <br>
