@@ -33,6 +33,7 @@ J_m = [1]*M # Default (for only biallelic marker)
 J_m[0] = 2
 poss = "P3"
 simi = 0 # Does not take C4 into account
+k_specific = 0
 # Alternatily, you can also define the function that should be maximized or
 # minimized in the function create_conse by yourself.
 # Names of the output file
@@ -293,9 +294,33 @@ def entropy(x, q_alle):
     N = len(q_alle[0])
     ent = 0
     for i in range(N):
-        p = np.dot(q_hier[0], S)
+        p = np.dot(q_hier[i], S)
         if(p.all() > 0):
             ent += -sum(p * np.log(p))
+    return ent
+
+def entropy_pop_max(x, q_alle, k_specific):
+    q_hier = change_format(q_alle)
+    S = create_S(len(q_alle), np.array(x))
+    N = len(q_alle[0])
+    ent = 0
+    for i in range(N):
+        p = np.dot(q_hier[i], S)
+        p = p[k_specific]
+        if(p > 0):
+            ent += - p * np.log(p)
+    return ent
+
+def entropy_pop_min(x, q_alle, k_specific):
+    q_hier = change_format(q_alle)
+    S = create_S(len(q_alle), np.array(x))
+    N = len(q_alle[0])
+    ent = 0
+    for i in range(N):
+        p = np.dot(q_hier[i], S)
+        p = p[k_specific]
+        if(p > 0):
+            ent += p * np.log(p)
     return ent
 
 def entropy_max(x, q_alle):
@@ -304,7 +329,7 @@ def entropy_max(x, q_alle):
     N = len(q_alle[0])
     ent = 0
     for i in range(N):
-        p = np.dot(q_hier[0], S)
+        p = np.dot(q_hier[i], S)
         if(p.all() > 0):
             ent += sum(p * np.log(p))
     return ent
@@ -400,7 +425,7 @@ def constraints_all(A, b_vek, K, p_alle, q_alle, J_m, M, simi):
                         
     return constr
 
-def algorithm_max(cons, A, b_vek,p_alle,q_alle, K, J_m, simi, poss):
+def algorithm_max(cons, A, b_vek,p_alle,q_alle, K, J_m, simi, poss, k_specific):
     '''
     
     Calculates the optimal parameter for one case, e.g. find the parameters that
@@ -445,6 +470,14 @@ def algorithm_max(cons, A, b_vek,p_alle,q_alle, K, J_m, simi, poss):
         constr = constraints_all(A, b_vek, K, p_alle, q_alle, J_m, M, simi)
         x0 = [0]*len(x_bounds)
         result = minimize(entropy, x0, args=(q_alle,), constraints=constr, bounds = x_bounds)
+    elif(poss == "P4"):
+        constr = constraints_all(A, b_vek, K, p_alle, q_alle, J_m, M, simi)
+        x0 = [0]*len(x_bounds)
+        result = minimize(entropy_pop_min, x0, args=(q_alle,k_specific, ), constraints=constr, bounds = x_bounds)
+    elif(poss == "P5"):
+        constr = constraints_all(A, b_vek, K, p_alle, q_alle, J_m, M, simi)
+        x0 = [0]*len(x_bounds)
+        result = minimize(entropy_pop_max, x0, args=(q_alle,k_specific, ), constraints=constr, bounds = x_bounds)
     
     return result.x
 
@@ -500,7 +533,7 @@ def change_first_position(liste1):
     return res
 
 # Try every K IA of individual that should be maximized and minimized
-def repeat_algo(q_vectors, p_alle, J_m, poss, simi):
+def repeat_algo(q_vectors, p_alle, J_m, poss, simi, k_specific):
     '''
     Parameters
     ----------
@@ -531,7 +564,7 @@ def repeat_algo(q_vectors, p_alle, J_m, poss, simi):
             res = algorithm_min(conse, A, b_vek, p_vec, q_vec, K, J_m, simi, poss)
             res_a.append(res)
         # Maximization
-        res = algorithm_max(conse, A, b_vek, p_vec, q_vec,K, J_m,simi, poss)
+        res = algorithm_max(conse, A, b_vek, p_vec, q_vec,K, J_m,simi, poss, k_specific)
         res_a.append(res)
         #print("res_a", res_a)
     return res_a
@@ -724,7 +757,7 @@ def repeat_create_daten(q_alle, p_alle, K, parameters, poss, names):
         save_values(p, name_p, 0)
     return
 
-def algo_final(q_vectors, p_alle, K, J_m, poss, simi, names):
+def algo_final(q_vectors, p_alle, K, J_m, poss, simi, names, k_specific):
     '''
     Saves all values of q and p in .txt-file. For every calulated matrix
     P_K exisits one file that saves the corresponding qP_K and an other file
@@ -747,11 +780,11 @@ def algo_final(q_vectors, p_alle, K, J_m, poss, simi, names):
     None.
 
     '''
-    temp = repeat_algo(q_vectors, p_alle, J_m, poss, simi)
+    temp = repeat_algo(q_vectors, p_alle, J_m, poss, simi, k_specific)
     repeat_create_daten(q_alle, p_alle, K, temp, poss, names)
     return
 
 q_alle, p_alle = correct_format(data_q, data_p)
 # Final Result
 K = len(data_p)
-print(algo_final(q_alle, p_alle, 3, J_m, poss,simi, names))
+print(algo_final(q_alle, p_alle, 3, J_m, poss,simi, names, k_specific))
