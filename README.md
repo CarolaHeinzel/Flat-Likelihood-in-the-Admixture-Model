@@ -37,9 +37,6 @@ test_p1_K3_4.txt<br>
 test_p1_K3_5.txt<br>
 test_p1_K3_6.txt<br>
 
-are an example output.
-
-is the output.
-
+are an example output for possibility I.
 
 
