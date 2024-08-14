@@ -1,6 +1,3 @@
-# To do:
-# Implementiere den Algorithmus so, dass Label Switching ausgeschlossen wird.
-# D.h. ändere die Grenzen dementsprechend!!!
 import numpy as np
 import pandas as pd
 from sympy import symbols, Matrix
@@ -21,6 +18,7 @@ import sympy as sp
 # Output: 
 # Saves the values for q and p for the maximal and minimal IA
 # in test_q1_K3_1.txt, ..., test_q1_K3_(2K).txt
+#%%
 # Application
 # 1) Load Data, i.e. insert here the correct names for q and p
 file_path_p = 'C:\\Users\\carol\\Downloads\\p_migtration7_mutation1'
@@ -308,7 +306,7 @@ def entropy_pop_max(x, q_alle, k_specific):
         p = np.dot(q_hier[i], S)
         p = p[k_specific]
         if(p > 0):
-            ent += - p * np.log(p)
+            ent += - p 
     return ent
 
 def entropy_pop_min(x, q_alle, k_specific):
@@ -320,7 +318,7 @@ def entropy_pop_min(x, q_alle, k_specific):
         p = np.dot(q_hier[i], S)
         p = p[k_specific]
         if(p > 0):
-            ent += p * np.log(p)
+            ent += p 
     return ent
 
 def entropy_max(x, q_alle):
@@ -786,5 +784,5 @@ def algo_final(q_vectors, p_alle, K, J_m, poss, simi, names, k_specific):
 
 q_alle, p_alle = correct_format(data_q, data_p)
 # Final Result
-K = len(data_p)
+K = data_p.shape[1]
 print(algo_final(q_alle, p_alle, K, J_m, poss,simi, names, k_specific))
