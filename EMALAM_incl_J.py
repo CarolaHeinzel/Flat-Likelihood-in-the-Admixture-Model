@@ -787,4 +787,4 @@ def algo_final(q_vectors, p_alle, K, J_m, poss, simi, names, k_specific):
 q_alle, p_alle = correct_format(data_q, data_p)
 # Final Result
 K = len(data_p)
-print(algo_final(q_alle, p_alle, 3, J_m, poss,simi, names, k_specific))
+print(algo_final(q_alle, p_alle, K, J_m, poss,simi, names, k_specific))
