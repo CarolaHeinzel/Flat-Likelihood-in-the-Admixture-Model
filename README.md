@@ -14,7 +14,7 @@ Example_Output_STRUCTURE: Example Output of STRUCTURE <br>
 Extract_p_J_arbitrary.R: Extract the estimated p in the output of STRUCTURE for J \geq 3 <br>
 Extract_p_q.R: Extract the estimated p and estimated q in the output of STRUCTURE for J = 2 <br>
 Plot.png. Example depiction of the results <br>
-Dokumentation_EMALAM: Explains how to use EMALAM. <br>
+Documentation_EMALAM: Explains how to use EMALAM. <br>
 Create_Figure.py: Depicts the estimated IAs <br>
 
 Additionally, the data 
