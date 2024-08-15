@@ -32,12 +32,13 @@ J_m[0] = 2
 poss = "P3"
 simi = 0 # Does not take C4 into account
 k_specific = 0
-# Alternatily, you can also define the function that should be maximized or
-# minimized in the function create_conse by yourself.
+# Alternatily, you can also define the function that should be
+# minimized in the function entropy() by yourself.
 # Names of the output file
 names = ["test_q1_K3_4_J", "test_p1_K3_4_J"]
-# 2) Execute the functions
 #%%
+# 2) Execute the functions
+
 def change_format(array):
     transponiert = np.transpose(array)
     umgeschrieben = transponiert.tolist()
@@ -47,10 +48,10 @@ def change_format(array):
 def correct_format(data_q, data_p):
     data_q = data_q.values.tolist()
     data_p = data_p.values.tolist()
-    K = len(data_q[0]) # Number of populations
+    N = len(data_q[0]) # Number of individuals
     q_alle = []
     p_alle = []
-    for i in range(K):
+    for i in range(N):
         q1_vec = [float(subliste[i]) for subliste in data_q]
         q_alle.append(q1_vec)
         liste = data_p
@@ -108,7 +109,6 @@ def create_row(K,v, P_K, i):
     prod = np.transpose(v) * P_K 
     temp = extact_coeff([prod[i]], K)
     return temp
-
 
 
 def create_S(K, parameters):
@@ -195,7 +195,7 @@ def create_A(q_alle):
             A[ind+1, ] = np.multiply(zeile, -1)
             ind += 2
     return A
-#%%
+
 
 def get_indices_of_med_values_from_multiple_lists(*matrices):
     result = []
@@ -204,7 +204,6 @@ def get_indices_of_med_values_from_multiple_lists(*matrices):
     num_cols = len(matrices[0][0])
     for row in range(num_rows):
         combined_list = [min(np.abs(matrix[row][col] - 1/K) for matrix in matrices) for col in range(num_cols)]
-        print(combined_list)
         max_index = combined_list.index(min(combined_list))
         result.append(max_index)
     
@@ -248,7 +247,6 @@ def permute_and_sort_lists(q):
     permuted_lists = list(itertools.permutations(q))
     sorted_permuted_lists = [list(map(sorted, perm)) for perm in permuted_lists]
     return sorted_permuted_lists
-
 
 def norm_similarity(q, q1):
     q = np.array(q)
@@ -443,6 +441,15 @@ def algorithm_max(cons, A, b_vek,p_alle,q_alle, K, J_m, simi, poss, k_specific):
          [Allele Frequecies Population 1, Marker 1,...,M]]
     K : Int
         Number of ancestral populations.
+    J_m: List
+        Number of Alleles for Marker m = 1, ...., M
+    simi: Int
+        0: Do not take label switching into account
+        1: Take label switching into account
+    poss: String
+        Choice of the Target function
+    k_specific: Names the population that should be considered (if any 
+                specific population should be considered, i.e. P4 or P5).
 
     Returns
     -------
@@ -483,7 +490,7 @@ def algorithm_min(cons, A, b_vek,p_alle,q_alle, K, J_m, simi, poss):
     '''
     
     Calculates the optimal parameter for one case, e.g. find the parameters that
-    minimize cons.
+    minimize cons. This function is only used for poss == P1.
     
     Parameters
     ----------
@@ -564,7 +571,6 @@ def repeat_algo(q_vectors, p_alle, J_m, poss, simi, k_specific):
         # Maximization
         res = algorithm_max(conse, A, b_vek, p_vec, q_vec,K, J_m,simi, poss, k_specific)
         res_a.append(res)
-        #print("res_a", res_a)
     return res_a
 
 def create_matrix_bestimmt(K, param):
@@ -623,7 +629,6 @@ def rearrange_matrix(input_matrix):
             output_matrix[j, i] = input_matrix[i][j]
 
     return output_matrix
-
 
 # Apply Matrices to Data
 def create_daten(q_alle, p_alle, K, param):
@@ -731,10 +736,11 @@ def repeat_create_daten(q_alle, p_alle, K, parameters, poss, names):
     q_tausch = change_first_position(q_alle)
     p_tausch = change_first_position(p_alle)
     t = 0
-    #for i in range(l):
     name_p = names[1]
     name_q = names[0]
+    
     if(poss == "P1"):
+        # Consider every population, i.e. 2*K possibilites
         for i in range(l):
             if(i % 2 == 0):
                 q_temp = q_tausch[t]
@@ -771,7 +777,15 @@ def algo_final(q_vectors, p_alle, K, J_m, poss, simi, names, k_specific):
         number of populations
     J_m: List
         Number of alleles at marker m for all m = 1, \ldots, M
-    poss: Int
+    poss: String
+        Choice of the Target function
+    names: List
+        Names of the Output Files
+    simi: Int
+        0: Do not take label switching into account
+        1: Take label switching into account
+    k_specific: Names the population that should be considered (if any 
+                specific population should be considered, i.e. P4 or P5).
         
     Returns
     -------
