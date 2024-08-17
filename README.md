@@ -6,8 +6,7 @@ Researchers can use different functions to maximize/minimize: <br>
 (I) Maximize and minimize the IA for every individuals in every population <br>
 (II) Maximize the admixture<br>
 (III) Minimize the admixture <br>
-(IV) Maximize the admixture for one single population <br>
-(V) Minimize the admxiture for one single population <br>
+
 
 This repository contains <br>
 
