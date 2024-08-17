@@ -1,13 +1,13 @@
 # Flat-Likelihood-in-the-Admixture-Model
 
-ACHTUNG: ICH habe gerade noch einen Fehler gefunden, ich melde mich, wenn ich ihn behoben habe!
-
 Here, we just describe briefly what the data in this repository is for. For detailed information, please read the Dokumentation.<br>
 
 Researchers can use different functions to maximize/minimize: <br>
 (I) Maximize and minimize the IA for every individuals in every population <br>
 (II) Maximize the admixture<br>
 (III) Minimize the admixture <br>
+(IV) Maximize the admixture for one single population <br>
+(V) Minimize the admxiture for one single population <br>
 
 This repository contains <br>
 
@@ -23,6 +23,7 @@ Additionally, the data
 
 q_migtration7_mutation1 <br>
 p_migtration7_mutation1 <br>
+pJ <br>
 
 are the two input files (as an example) and
 
