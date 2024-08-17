@@ -1,5 +1,7 @@
 # Flat-Likelihood-in-the-Admixture-Model
 
+ACHTUNG: ICH habe gerade noch einen Fehler gefunden, ich melde mich, wenn ich ihn behoben habe!
+
 Here, we just describe briefly what the data in this repository is for. For detailed information, please read the Dokumentation.<br>
 
 Researchers can use different functions to maximize/minimize: <br>
