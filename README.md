@@ -1,6 +1,6 @@
 # Flat-Likelihood-in-the-Admixture-Model
 
-Here, we just describe briefly what the data in this repository is for. For detailed information, please read the Dokumentation.<br>
+Here, we just describe briefly what the data in this repository is for. For detailed information, please read the documentation.<br>
 
 Researchers can use different functions to maximize/minimize: <br>
 (I) Maximize and minimize the IA for every individuals in every population <br>
