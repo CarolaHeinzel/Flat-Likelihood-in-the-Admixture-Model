@@ -6,6 +6,8 @@ Researchers can use different functions to maximize/minimize: <br>
 (I) Maximize and minimize the IA for every individuals in every population <br>
 (II) Maximize the admixture<br>
 (III) Minimize the admixture <br>
+(IV) Maximize the ancestry in a specific population <br>
+(V) Minimize the ancestry in a specific population <br>
 
 
 This repository contains <br>
