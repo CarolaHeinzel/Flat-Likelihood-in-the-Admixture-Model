@@ -22,24 +22,14 @@ Create_Figure.py: Depicts the estimated IAs <br>
 
 Additionally, the data 
 
-q_migtration7_mutation1 <br>
-p_migtration7_mutation1 <br>
-pJ <br>
+p_CEU_IBS_TSI_K2 <br>
+p_CEU_IBS_TSI_K2_J <br>
+q_CEU_IBS_TSI_K2 <br>
 
-are the two input files (as an example) and
+are the three input files (as an example) and
 
-test_q1_K3_1.txt <br>
-test_q1_K3_2.txt<br>
-test_q1_K3_3.txt<br>
-test_q1_K3_4.txt<br>
-test_q1_K3_5.txt<br>
-test_q1_K3_6.txt<br>
-test_p1_K3_1.txt<br>
-test_p1_K3_2.txt<br>
-test_p1_K3_3.txt<br>
-test_p1_K3_4.txt<br>
-test_p1_K3_5.txt<br>
-test_p1_K3_6.txt<br>
+p_K2_P1_0.txt <br>
+q_K2_P1_0.txt <br>
 
 are an example output for possibility I.
 
