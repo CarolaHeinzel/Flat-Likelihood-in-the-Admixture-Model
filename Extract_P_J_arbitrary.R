@@ -3,11 +3,6 @@ M = 100 # Number of markers
 file_pathK = "CEU_IBS_TSI_enhanced_corr_f" # File Name
 
 read_table_data <- function(file_path, K, M) {
-  table_data_list <- list()
-  for(m in 1:M){
-    decimal_vector = rep(1,K)
-    table_data_list[[length(table_data_list) + 1]] <- matrix(decimal_vector, ncol = K, byrow = TRUE)
-  }
   lines <- readLines(file_path)
   start_indices <- grep("0.0% missing data", lines)
   res = matrix(nrow = 1, ncol = K)
