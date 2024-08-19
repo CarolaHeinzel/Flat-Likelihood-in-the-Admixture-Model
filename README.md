@@ -17,7 +17,7 @@ CEU_IBS_TSI_enhanced_corr_f: Example Output of STRUCTURE <br>
 Extract_P_J_arbitrary.R: Extract the estimated p in the output of STRUCTURE for J \geq 3 <br>
 Extract_p_q.R: Extract the estimated p and estimated q in the output of STRUCTURE for J = 2 <br>
 Documentation_EMALAM: Explains how to use EMALAM. <br>
-Create_Figure.py: Depicts the estimated IAs <br>
+Create_Plot.py: Depicts the estimated IAs <br>
 
 Additionally, the data 
 
