@@ -2,14 +2,8 @@
 K = 3 # Number of Populations
 file_pathK = "3Island_mi5_mu1_N_f" # Output of STRUCTURE
 
-
 # function to get the required format of p and q
 read_table_data <- function(file_path, K, M) {
-  table_data_list <- list()
-  for(m in 1:M){
-    decimal_vector = c(1,1,1,0,0,0)
-    table_data_list[[length(table_data_list) + 1]] <- matrix(decimal_vector, ncol = K, byrow = TRUE)
-  }
   lines <- readLines(file_path)
   start_indices <- grep("0.0% missing data", lines)
   for (j in 1:length(start_indices)) {
