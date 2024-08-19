@@ -13,8 +13,8 @@ Researchers can use different functions to maximize/minimize: <br>
 This repository contains <br>
 
 EMALAM_incl_J.py: EMALAM, code that the user has to run  <br>
-Example_Output_STRUCTURE: Example Output of STRUCTURE <br>
-Extract_p_J_arbitrary.R: Extract the estimated p in the output of STRUCTURE for J \geq 3 <br>
+CEU_IBS_TSI_enhanced_corr_f: Example Output of STRUCTURE <br>
+Extract_P_J_arbitrary.R: Extract the estimated p in the output of STRUCTURE for J \geq 3 <br>
 Extract_p_q.R: Extract the estimated p and estimated q in the output of STRUCTURE for J = 2 <br>
 Plot.png. Example depiction of the results <br>
 Documentation_EMALAM: Explains how to use EMALAM. <br>
