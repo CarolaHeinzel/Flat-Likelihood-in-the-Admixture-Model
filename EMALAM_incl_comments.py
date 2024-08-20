@@ -5,13 +5,6 @@ from scipy.optimize import minimize
 import itertools
 import sympy as sp
 #%%
-# EMALAM
-# The file 'p_values' has to contain K columns with M rows, i.e.
-# at row m, column k stand the allele frequency for marker m in population k
-# If we have J > 3, the rows contain p_{1,j,m}, ..., p_{K,j,m} for all j,m
-# The file 'q_values' has to contain K columns with N rows, i.e.
-# at row n, column k stand the allele frequency for individual n in population k
-# to the Output of STRUCTURE
 # Output: 
 # Saves the values for q and p for the maximal and minimal IA
 # in the files that are named according to the variable names
@@ -41,10 +34,10 @@ pJ = correct_formatJ(pJ)
 # pJ = 0
 data_p = data_p[~(data_p == 1).all(axis=1)]
 # poss names what we want to maximize/minimize
-# Alternatily, you can also define the function that should be
+# Alternativly, you can also define the function that should be
 # minimized in the function entropy() by yourself.
 poss = "P2"
-simi = 0 # Do not take C4 into account
+simi = 0 # Do not take label switching into account (recommended)
 k_specific = 0
 n_trials = 10 # Number of different initial values for the minimization function
 # Names of the output files
