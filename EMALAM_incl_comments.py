@@ -8,7 +8,7 @@ import sympy as sp
 # Application
 # 1) Load Data
 file_path_p = 'p_CEU_IBS_TSI_K2'
-file_path_q = 'q_CEU_IBS_TSI_K2'
+file_path_q = 'q_CEU_IBS_TSI_K2.txt'
 file_path_pJ = 'p_CEU_IBS_TSI_K2_J'
 
 data_q = pd.read_csv(file_path_q, sep=' ', header=None)
