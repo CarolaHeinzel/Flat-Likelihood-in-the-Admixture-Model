@@ -5,10 +5,6 @@ from scipy.optimize import minimize
 import itertools
 import sympy as sp
 #%%
-# Output: 
-# Saves the values for q and p for the maximal and minimal IA
-# in the files that are named according to the variable names
-#%%
 # Application
 # 1) Load Data
 file_path_p = 'p_CEU_IBS_TSI_K2'
