@@ -43,8 +43,8 @@ To install these packages, you can use <br>
 
 python3.8.3 pip install scipy==1.10.0 <br>
 
-and to see whether you where successful, type:
-import scipy
+and to see whether you where successful, type: <br>
+import scipy <br>
 print(scipy.__version__) <br>
 
 Alternativly, you can use <br>
