@@ -32,4 +32,26 @@ q_K2_P1_0.txt <br>
 
 are an example output for possibility I.
 
+We used python 3.8.3 and <br>
+
+sympy: 1.12 <br>
+numpy: 1.23.5 <br>
+pandas: 1.4.4 <br>
+scipy: 1.10.0 <br>
+
+To install these packages, you can use <br>
+
+python3.8.3 pip install scipy==1.10.0 <br>
+
+and to see whether you where successful, type:
+import scipy
+print(scipy.__version__) <br>
+
+Alternativly, you can use <br>
+
+conda create -n myenv python=3.8.3 <br>
+conda activate myenv <br>
+conda install scipy=1.10.0 <br>
+
+to use the correct version of python and to have the correct version of scipy. Analogously, you can install sympy, numpy and pandas.
 
