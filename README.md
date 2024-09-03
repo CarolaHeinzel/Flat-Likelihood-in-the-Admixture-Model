@@ -10,7 +10,11 @@ numpy: 1.23.5 <br>
 pandas: 1.4.4 <br>
 scipy: 1.10.0 <br>
 
-To install these packages, you can use <br>
+To install the correct python version, please follow the instrucions at
+
+https://www.python.org/downloads/release/python-383/.  <br>
+
+To install these packages with the correct versions, you can use <br>
 
 python3.8.3 pip install scipy==1.10.0 <br>
 
