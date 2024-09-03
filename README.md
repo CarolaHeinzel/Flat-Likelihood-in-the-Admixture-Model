@@ -23,7 +23,7 @@ Additionally, the data
 
 p_CEU_IBS_TSI_K2 <br>
 p_CEU_IBS_TSI_K2_J <br>
-q_CEU_IBS_TSI_K2 <br>
+q_CEU_IBS_TSI_K2.txt <br>
 
 are the three input files (as an example) and
 
