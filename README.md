@@ -2,6 +2,38 @@
 
 Here, we just describe briefly what the data in this repository is for and how to apply EMALAM. For detailed information, please read the documentation.<br>
 
+# Run the Code
+We used python 3.8.3 and <br>
+
+sympy: 1.12 <br>
+numpy: 1.23.5 <br>
+pandas: 1.4.4 <br>
+scipy: 1.10.0 <br>
+
+To install these packages, you can use <br>
+
+python3.8.3 pip install scipy==1.10.0 <br>
+
+
+and to see whether you where successful, type: <br>
+import scipy <br>
+print(scipy.__version__) <br>
+
+Alternativly, you can use <br>
+
+conda create -n myenv python=3.8.3 <br>
+conda activate myenv <br>
+conda install scipy=1.10.0 <br>
+
+to use the correct version of python and to have the correct version of scipy. Analogously, you can install sympy, numpy and pandas. <br>
+
+To run the code, please write <br>
+
+python EMALAM_incl_J.py q_CEU_IBS_TSI_K2.txt p_CEU_IBS_TSI_K2 p_CEU_IBS_TSI_K2_J p_K2_P1 q_K2_P1 "P1" <br>
+
+in the command line.
+
+# User Choices
 Researchers can use different functions to maximize/minimize: <br>
 (I) Maximize and minimize the IA for every individuals in every population <br>
 (II) Maximize the admixture<br>
@@ -32,34 +64,7 @@ q_K2_P1_0.txt <br>
 
 are an example output for possibility I.
 
-We used python 3.8.3 and <br>
 
-sympy: 1.12 <br>
-numpy: 1.23.5 <br>
-pandas: 1.4.4 <br>
-scipy: 1.10.0 <br>
-
-To install these packages, you can use <br>
-
-python3.8.3 pip install scipy==1.10.0 <br>
-
-and to see whether you where successful, type: <br>
-import scipy <br>
-print(scipy.__version__) <br>
-
-Alternativly, you can use <br>
-
-conda create -n myenv python=3.8.3 <br>
-conda activate myenv <br>
-conda install scipy=1.10.0 <br>
-
-to use the correct version of python and to have the correct version of scipy. Analogously, you can install sympy, numpy and pandas. <br>
-
-To run the code, please write <br>
-
-python EMALAM_incl_J.py q_CEU_IBS_TSI_K2.txt p_CEU_IBS_TSI_K2 p_CEU_IBS_TSI_K2_J p_K2_P1 q_K2_P1 "P1" <br>
-
-in the command line.
 
 
 
