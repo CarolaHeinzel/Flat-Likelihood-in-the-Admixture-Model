@@ -69,9 +69,11 @@ Researchers can use different functions to maximize/minimize: <br>
 (V) Minimize the ancestry in a specific population ("P5") <br>
 
 To choose (I) you can use <br>
-python EMALAM_incl_J.py q_CEU_IBS_TSI_K2.txt p_CEU_IBS_TSI_K2 p_CEU_IBS_TSI_K2_J p_K2_P1 q_K2_P1 "P1" <br>
+python EMALAM_incl_J.py q_CEU_IBS_TSI_K2.txt p_CEU_IBS_TSI_K2 p_CEU_IBS_TSI_K2_J q_K2_P1 p_K2_P1 "P1" <br>
 
-Then, you will get 2K output files for the IAs,  called q_K2_P1_0,  q_K2_P1_1, ..., q_K2_P1_2K and 2K files for the allele frequencies,  called q_K2_P1_0,  q_K2_P1_1, ..., q_K2_P1_2K. <br>
+Then, you will get 2K output files for the IAs,  called q_K2_P1_0,  q_K2_P1_1, ..., q_K2_P1_2K and 2K files for the allele frequencies,  called p_K2_P1_0,  p_K2_P1_1, ..., p_K2_P1_2K. <br>
+
+For the other four opportunities, you have to change the last variable of the command line to "P2", "P3", "P4" or "P5". This consequeces two output filese, q_K2_P1_0 and  p_K2_P1_0. <br>
 
 
 You can change the input files to the input files with your own data. Therefore, the same format is required. To get the correct format, you can apply the R function Extract_P_J_arbitrary.R (for p_CEU_IBS_TSI_K2_J and p_CEU_IBS_TSI_K2_J) and the R file Extract_p_q.R for q and for cases with only bi-allelic markers. <br>
