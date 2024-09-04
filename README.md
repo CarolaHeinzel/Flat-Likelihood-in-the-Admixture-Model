@@ -33,6 +33,17 @@ numpy: 1.23.5 <br>
 pandas: 1.4.4 <br>
 scipy: 1.10.0 <br>
 
+To check whether you have the correct versions, type
+
+import platform  <br>
+print("Python version:", platform.python_version())  <br>
+
+(for the python version) and  <br>
+
+import sympy <br>
+print("sympy version:", sympy.__version__) <br>
+
+
 To install the correct python version, please follow the instrucions at
 
 https://www.python.org/downloads/release/python-383/.  <br>
