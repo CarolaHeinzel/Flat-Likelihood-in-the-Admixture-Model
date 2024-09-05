@@ -107,9 +107,25 @@ or <br>
 
 as input file. <br>
 
+The rows of p_CEU_IBS_TSI_K2_J also represent the markers and the columns represent the populations. However, here we sum up the allele frequencies of every marker with more than two alleles. For example, the output of STRUCTURE might be <br>
 
+Locus 1 :  <br>
+2 alleles <br>
+0.0% missing data <br>
+   1   (0.391) 0.391 0.391 0.269  <br>
+   0   (0.609) 0.609 0.609 0.731  <br>
 
-To get the correct format, you can apply the R function Extract_P_J_arbitrary.R (for p_CEU_IBS_TSI_K2_J and p_CEU_IBS_TSI_K2_J) and the R file Extract_p_q.R for q and for cases with only bi-allelic markers. <br>
+Locus 2 :  <br>
+2 alleles <br>
+0.0% missing data <br>
+   0   (0.240) 0.640 0.840 0.576  <br>
+   1   (0.160) 0.160 0.160 0.124   <br>
+   2   (0.600) 0.200 0.000 0.300  <br>
+Then, the file p_CEU_IBS_TSI_K2_J contains
+
+0.360 0.160 0.424   <br>
+
+To get the correct format, you can apply the R function Extract_P_J_arbitrary.R (for p_CEU_IBS_TSI_K2_J and p_CEU_IBS_TSI_K) and the R file Extract_p_q.R for q and for cases with only bi-allelic markers. <br>
 
 If you only have bi-allelic markers, type "-1" instead of p_CEU_IBS_TSI_K2_J. 
 
