@@ -33,36 +33,20 @@ numpy: 1.23.5 <br>
 pandas: 1.4.4 <br>
 scipy: 1.10.0 <br>
 
-To check whether you have the correct versions, type
-
-import platform  <br>
-print(platform.python_version())  <br>
-
-(for the python version) and  <br>
-
-import sympy <br>
-print("sympy version:", sympy.__version__) <br>
-
-for the package sympy. To install the correct python version, please follow the instrucions at
+To check whether you have the correct versions, you can use <br>
+pip show scipy <br>
+(for the package scipy) and <br>
+python --version <br>
+for the python version. 
+To install the correct python version, please follow the instructions at
 
 https://www.python.org/downloads/release/python-383/.  <br>
 
-To install these packages with the correct versions, you can use <br>
+To install the packages with the correct versions, you can use <br>
 
-python3.8.3 pip install scipy==1.10.0 <br>
+python3.8 -m pip install scipy==1.10.0 <br>
 
-
-and to see whether you were successful, type: <br>
-import scipy <br>
-print(scipy.__version__) <br>
-
-Alternativly, you can use <br>
-
-conda create -n myenv python=3.8.3 <br>
-conda activate myenv <br>
-conda install scipy=1.10.0 <br>
-
-to use the correct version of python and to have the correct version of scipy. Analogously, you can install sympy, numpy and pandas. <br>
+Analogously, you can install sympy, numpy and pandas. <br>
 
 To run the code, please write <br>
 
