@@ -65,9 +65,9 @@ Researchers can use different functions to maximize/minimize: <br>
 To choose (I) you can use <br>
 python EMALAM_incl_comments_commandline.py q_CEU_IBS_TSI_K2.txt p_CEU_IBS_TSI_K2 p_CEU_IBS_TSI_K2_J q_K2_P1 p_K2_P1 "P1" <br>
 
-Then, you will get 2K output files for the estimated IAs,  called q_K2_P1_0,  q_K2_P1_1, ..., q_K2_P1_2K and 2K files for the estimated allele frequencies,  called p_K2_P1_0,  p_K2_P1_1, ..., p_K2_P1_2K. <br>
+Then, you will get 2K output files for the estimated IAs,  called q_K2_P1_0.txt,  q_K2_P1_1.txt, ..., q_K2_P1_2K.txt and 2K files for the estimated allele frequencies,  called p_K2_P1_0.txt,  p_K2_P1_1.txt, ..., p_K2_P1_2K.txt. <br>
 
-For the other four opportunities, you have to change the last variable of the command line to "P2", "P3", "P4" or "P5". This consequeces two output files, q_K2_P1_0 and  p_K2_P1_0. If you chose "P4" or "P5", an additional input, i..e. the population that should be considered, is required. To consider population i = 0, 1, ..., K, you type <br>
+For the other four opportunities, you have to change the last variable of the command line to "P2", "P3", "P4" or "P5". This consequeces two output files, q_K2_P1_0.txt and  p_K2_P1_0.txt. If you chose "P4" or "P5", an additional input, i..e. the population that should be considered, is required. To consider population i = 0, 1, ..., K, you type <br>
 
 python EMALAM_incl_comments_commandline.py q_CEU_IBS_TSI_K2.txt p_CEU_IBS_TSI_K2 p_CEU_IBS_TSI_K2_J q_K2_P1 p_K2_P1 "P4" --k_specific i <br>
 
