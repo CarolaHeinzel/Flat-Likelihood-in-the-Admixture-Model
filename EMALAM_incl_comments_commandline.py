@@ -838,9 +838,10 @@ def algo_final(q_vectors, p_alle, K, poss, simi, names, k_specific,pJ, n_trials)
     '''
     temp = repeat_algo(q_vectors, p_alle, poss, simi, k_specific,pJ, n_trials)
     repeat_create_daten(q_alle, p_alle, K, temp, poss, names)
-    return
+    print("Successfully calculated the MLEs")
+    return 
 
 q_alle, p_alle = correct_format(data_q, data_p)
 # Final Result
 K = data_p.shape[1]
-print(algo_final(q_alle, p_alle, K, poss,simi, names, k_specific, pJ, n_trials))
+res_algo_final = algo_final(q_alle, p_alle, K, poss,simi, names, k_specific, pJ, n_trials)
