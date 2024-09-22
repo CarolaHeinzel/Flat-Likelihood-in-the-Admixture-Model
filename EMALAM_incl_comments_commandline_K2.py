@@ -56,32 +56,6 @@ def main(data_q_input, data_p_input, pJ_input, data_q_output, data_p_output, pos
     
     return data_q, data_p, pJ, names, poss
 
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Process input and output file names.")
-    parser.add_argument("data_q_input", type=str, help="The input file name for data_q")
-    parser.add_argument("data_p_input", type=str, help="The input file name for data_p")
-    parser.add_argument("pJ_input", type=str, help="The input file name for pJ, or '-1' if not provided")
-    parser.add_argument("data_q_output", type=str, help="The output file name for data_q")
-    parser.add_argument("data_p_output", type=str, help="The output file name for data_p")
-    parser.add_argument("poss", type=str, help="The output file name for data_p")
-
-    parser.add_argument("--k_specific", type=str, help="Specific input for P4 or P5, required if poss is P4 or P5")
-
-    args = parser.parse_args()
-
-    # Check if k_specific is required
-    if args.poss in ["P4", "P5"] and not args.k_specific:
-        raise ValueError("k_specific is required when poss is P4 or P5")
-    # Rufe die main-Funktion auf und übergebe die Input-Dateien
-    data_q, data_p, pJ, names, poss = main(args.data_q_input, args.data_p_input, args.pJ_input, args.data_q_output, args.data_p_output, args.poss)
-    
-    # Optionale Verarbeitung für pJ
-    if pJ is not None:
-        pJ = correct_formatJ(pJ)
-    data_p = data_p[~(data_p == 1).all(axis=1)]
-
-    print("Input:", data_q, data_p, pJ)
-
 #%%
 def determine_p(data_p):
     result_list = data_p[0].tolist()
@@ -100,7 +74,7 @@ def determine_p(data_p):
         if(sM < temp_max):
             sM = temp_max
     return s1, sM
-print(determine_p(data_p))
+# print(determine_p(data_p))
 
 #%%
 
@@ -917,7 +891,34 @@ def algo_final(q_vectors, p_alle, K, poss, simi, names, k_specific,pJ, n_trials,
     print("Successfully calculated the MLEs")
     return 
 
-q_alle, p_alle = correct_format(data_q, data_p)
-# Final Result
-K = data_p.shape[1]
-res_algo_final = algo_final(q_alle, p_alle, K, poss,simi, names, k_specific, pJ, n_trials, data_p, data_q)
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Process input and output file names.")
+    parser.add_argument("data_q_input", type=str, help="The input file name for data_q")
+    parser.add_argument("data_p_input", type=str, help="The input file name for data_p")
+    parser.add_argument("pJ_input", type=str, help="The input file name for pJ, or '-1' if not provided")
+    parser.add_argument("data_q_output", type=str, help="The output file name for data_q")
+    parser.add_argument("data_p_output", type=str, help="The output file name for data_p")
+    parser.add_argument("poss", type=str, help="The output file name for data_p")
+
+    parser.add_argument("--k_specific", type=str, help="Specific input for P4 or P5, required if poss is P4 or P5")
+
+    args = parser.parse_args()
+
+    # Check if k_specific is required
+    if args.poss in ["P4", "P5"] and not args.k_specific:
+        raise ValueError("k_specific is required when poss is P4 or P5")
+    # Rufe die main-Funktion auf und übergebe die Input-Dateien
+    data_q, data_p, pJ, names, poss = main(args.data_q_input, args.data_p_input, args.pJ_input, args.data_q_output, args.data_p_output, args.poss)
+    
+    # Optionale Verarbeitung für pJ
+    if pJ is not None:
+        pJ = correct_formatJ(pJ)
+    data_p = data_p[~(data_p == 1).all(axis=1)]
+
+    print("Input:", data_q, data_p, pJ)
+
+
+    q_alle, p_alle = correct_format(data_q, data_p)
+    # Final Result
+    K = data_p.shape[1]
+    res_algo_final = algo_final(q_alle, p_alle, K, poss,simi, names, k_specific, pJ, n_trials, data_p, data_q)

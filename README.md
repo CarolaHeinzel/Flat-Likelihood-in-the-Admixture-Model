@@ -26,28 +26,9 @@ q_K2_P1_0.txt <br>
 are an example output for possibility I. The definition of possibility I is described below.
 
 # Run the Code
-We used python 3.8.3 and <br>
-
-sympy: 1.12 <br>
-numpy: 1.23.5 <br>
-pandas: 1.4.4 <br>
-scipy: 1.10.0 <br>
-
-To check whether you have the correct versions, you can use <br>
-pip show scipy <br>
-(for the package scipy) and <br>
-python --version <br>
-for the python version. 
-To install the correct python version, please follow the instructions at
-
-https://www.python.org/downloads/release/python-383/.  <br>
-
-To install the packages with the correct versions, you can use <br>
-
-python3.8 -m pip install scipy==1.10.0 <br>
-
-Analogously, you can install sympy, numpy and pandas. <br>
-
+We used python 3.8.3 and the packages as mentioned in requirements.txt. To install them, type `pip install -r requirements.txt`. We have tested the code under python 3.8 and 3.12. 
+ <br>
+ 
 To run the code, please write <br>
 
 python EMALAM_incl_comments_commandline_K2.py q_CEU_IBS_TSI_K2.txt p_CEU_IBS_TSI_K2 p_CEU_IBS_TSI_K2_J p_K2_P1 q_K2_P1 "P2" <br>

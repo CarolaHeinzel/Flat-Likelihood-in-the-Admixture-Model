@@ -1,8 +1,8 @@
-The following versions are required:
+sympy==1.13.3
+numpy==2.1.1
+pandas==2.2.3
+scipy==1.14.1
+streamlit==1.38.0
+matplotlib==3.9.2
+plotly==5.24.1
 
-
-python: 3.8.3
-sympy: 1.12
-numpy: 1.23.5
-pandas: 1.4.4
-scipy: 1.10.0 
