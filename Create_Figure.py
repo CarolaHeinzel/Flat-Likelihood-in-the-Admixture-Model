@@ -1,5 +1,3 @@
-import numpy as np
-from scipy.optimize import minimize
 import matplotlib.pyplot as plt
 
 num_arrays = len(data[1:5])
@@ -20,7 +18,6 @@ for i in range(num_arrays):
         ax.bar(i, data[i][j], bottom=bottom, color=colors[j], label=value_labels[j] if i == 0 else "")
         bottom += data[i][j]
         
-# Achsenbeschriftungen und Titel
 ax.set_xlabel('Individuals')
 ax.set_ylabel('Estimated Ancestry')
 ax.legend()
