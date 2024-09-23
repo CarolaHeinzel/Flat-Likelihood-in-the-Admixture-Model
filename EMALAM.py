@@ -51,9 +51,6 @@ if st.session_state.uploaded_q_file != "":
 
 submit = st.button("Submit")
 if submit:
-    print(st.session_state.uploaded_q_file.name)
-
-
     # Remove non-polymorphic loci
     data_p = data_p[~(data_p == 1).all(axis=1)]
 
