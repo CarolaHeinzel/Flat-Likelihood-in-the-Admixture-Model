@@ -14,7 +14,6 @@ import argparse
 
 #data_q = pd.read_csv(file_path_q, sep=' ', header=None)
 
-
 def correct_formatJ(data_p):
     data_p = data_p.values.tolist()
     K = len(data_p[0]) # Number of populations
@@ -34,27 +33,6 @@ k_specific = 0
 n_trials = 10 # Number of different initial values for the minimization function
 # Names of the output files
 
-def main(data_q_input, data_p_input, pJ_input, data_q_output, data_p_output, poss):
-    # Lese den Inhalt der Input-Dateien ein
-    data_q = pd.read_csv(data_q_input, sep=' ', header=None)
-    data_p = pd.read_csv(data_p_input, sep=' ', header=None)
-    
-    if pJ_input == "-1":
-        pJ = None
-    else:
-        pJ = pd.read_csv(pJ_input, sep=' ', header=None)
-    
-    # Bereinigen von data_p: Entferne Zeilen, die nur 1 enthalten
-    data_p = data_p[~(data_p == 1).all(axis=1)]
-    
-    # Speichere die Ergebnisse in den angegebenen Ausgabedateien
-    data_q.to_csv(data_q_output, sep=' ', header=False, index=False)
-    data_p.to_csv(data_p_output, sep=' ', header=False, index=False)
-    
-    # Erstelle die Liste der Dateinamen
-    names = [data_q_output, data_p_output]
-    
-    return data_q, data_p, pJ, names, poss
 
 #%%
 def determine_p(data_p):
@@ -79,7 +57,8 @@ def determine_p(data_p):
 #%%
 
 # Calculation for K = 2
-def calc_p_q(data_p, data_q, name_q, name_p):
+#def calc_p_q(data_p, data_q, name_q, name_p):
+def calc_p_q(data_p, data_q):
     '''
     
     Calculates the maximal and minimal estimated IAs with the formula.
@@ -89,10 +68,10 @@ def calc_p_q(data_p, data_q, name_q, name_p):
         Estimated Allele Frequencies of every marker for every population.
     data_1 : df
         Estimated IA of every Individual for every population.
-    name_q : string
-        Name of the output file for q.
-    name_p : string
-        Name of the output file for p.
+#    name_q : string
+#        Name of the output file for q.
+#    name_p : string
+#        Name of the output file for p.
 
     Returns
     -------
@@ -107,10 +86,12 @@ def calc_p_q(data_p, data_q, name_q, name_p):
     a_max = (s1-1)/(max_value/(1-max_value) + s1)
     b_max = 1 + a_max * (max_value/(1-max_value))
 
-
     a_min = 1/(1-min_value)/(sM + min_value/(1-min_value))
     b_min =  min_value/(1-min_value)*(a_min - 1)
-    
+
+    res_p = []
+    res_q = []
+      
     N = len(data_q[0])
     for i in range(N):
         q_max = data_q[0]*(1-a_max) + (1-data_q[0])*b_max
@@ -124,11 +105,11 @@ def calc_p_q(data_p, data_q, name_q, name_p):
     result_pmax = [p_max_1.tolist(), p_max_2.tolist()]
     result_pmin = [p_min_1.tolist(), p_min_2.tolist()]
 
-    save_values(result_qmax, name_q, "max")
-    save_values(result_pmax, name_p, "max")
-    save_values(result_qmin, name_q, "min")
-    save_values(result_pmin, name_p, "min")
-    return 
+    res_p.append({"data" : result_pmin, "extension" : "min"})
+    res_p.append({"data" : result_pmax, "extension" : "max"})
+    res_q.append({"data" : result_qmin, "extension" : "min"})
+    res_q.append({"data" : result_qmax, "extension" : "max"})
+    return res_q, res_p
 #%%
 # 2) Execute the functions
 def change_format(array):
@@ -760,21 +741,21 @@ def create_daten(q_alle, p_alle, K, param):
     for m in range(M):
         p_temp = matrix_inv@p_anders[m]
         res_p.append(p_temp) 
-    return res_p, res_q
+    return res_q, res
 
 # Transpose the matrix input_matrix
 def transpose_matrix(input_matrix):
     return Matrix(input_matrix).transpose()
 
-def save_values(temp, name, i):
+def save_values(temp, name):
     '''
     
-    Saves the output as txt.-file
+    Saves the output as file
     
     Parameters
     ----------
     temp : List
-        List that should be saved, i.e. allele frequencies and IAs.
+        List of dicts that should be saved, i.e. allele frequencies and IAs.
     name : String
         Name of the output file.
     i : Int
@@ -785,15 +766,14 @@ def save_values(temp, name, i):
     None.
 
     '''
-    dateipfad = f"{name}_{i}.txt" 
     temp = transpose_matrix(temp)
     temp = temp.tolist()
-    with open(dateipfad, 'w') as datei:
+    with open(name, 'w') as datei:
         for row in temp:
             zeilen_text = "\t".join(map(str, row)) + "\n"
             datei.write(zeilen_text)
 
-def repeat_create_daten(q_alle, p_alle, K, parameters, poss, names):
+def repeat_create_daten(q_alle, p_alle, K, parameters, poss):
     '''
     Calculates the maximal and minimal IA for every Individual at the first 
     value of the q_alle-list.    
@@ -811,19 +791,22 @@ def repeat_create_daten(q_alle, p_alle, K, parameters, poss, names):
         from one population.
     poss: String
         Choice of the Target function
-    names: List
-        Names of the output lists
+#    names: List
+#        Names of the output lists
     Returns
     -------
-    None.
+    res_q : List
+        List of Outputs for q
+    res_p : List
+        List of Outputs for p
 
     '''
     l = len(parameters)
     q_tausch = change_first_position(q_alle)
     p_tausch = change_first_position(p_alle)
     t = 0
-    name_p = names[1]
-    name_q = names[0]
+    res_p = []
+    res_q = []
     
     if(poss == "P1"):
         # Consider every population, i.e. 2*K possibilites
@@ -832,22 +815,24 @@ def repeat_create_daten(q_alle, p_alle, K, parameters, poss, names):
                 q_temp = q_tausch[t]
                 p_temp = p_tausch[t]
                 t += 1
-            p,q = create_daten(q_temp, p_temp, K, parameters[i])
-            p = transpose_matrix(p)
+            q, p = create_daten(q_temp, p_temp, K, parameters[i])
             q = transpose_matrix(q)
-            save_values(q, name_q, i)
-            save_values(p, name_p, i)
+            p = transpose_matrix(p)
+            res_q.append(q)
+            res_p.append(p)
     else:
         q_temp = q_tausch[t]
         p_temp = p_tausch[t]
-        p,q = create_daten(q_temp, p_temp, K, parameters[0])
-        p = transpose_matrix(p)
+        q, p = create_daten(q_temp, p_temp, K, parameters[0])
         q = transpose_matrix(q)
-        save_values(q, name_q, 0)
-        save_values(p, name_p, 0)
-    return
+        p = transpose_matrix(p)
+        res_q.append(q)
+        res_p.append(p)
 
-def algo_final(q_vectors, p_alle, K, poss, simi, names, k_specific,pJ, n_trials,data_p, data_q):
+    return res_q, res_p
+
+#def algo_final(q_vectors, p_alle, K, poss, simi, names, k_specific,pJ, n_trials,data_p, data_q):
+def algo_final(data_q, data_p, K, poss, simi, k_specific,pJ, n_trials):
     '''
     Saves all values of q and p in .txt-file. For every calulated matrix
     P_K exisits one file that saves the corresponding qP_K and an other file
@@ -855,9 +840,9 @@ def algo_final(q_vectors, p_alle, K, poss, simi, names, k_specific,pJ, n_trials,
 
     Parameters
     ----------
-    q_vectors : List
+    data_q : pandas.DataFrame 
         All IAs.
-    p_alle : List
+    data_p : pandas.dataFrame
         All allele frequencies.
     K: Int
         number of populations
@@ -865,8 +850,6 @@ def algo_final(q_vectors, p_alle, K, poss, simi, names, k_specific,pJ, n_trials,
         Number of alleles at marker m for all m = 1, \ldots, M
     poss: String
         Choice of the Target function
-    names: List
-        Names of the Output Files
     simi: Int
         0: Do not take label switching into account
         1: Take label switching into account
@@ -880,24 +863,28 @@ def algo_final(q_vectors, p_alle, K, poss, simi, names, k_specific,pJ, n_trials,
         
     Returns
     -------
-    None.
+    data_q : pandas.DataFrame 
+        All IAs.
+    data_p : pandas.dataFrame
+        All allele frequencies.
 
     '''
     if(K > 2):
-        temp = repeat_algo(q_vectors, p_alle, poss, simi, k_specific,pJ, n_trials)
-        repeat_create_daten(q_alle, p_alle, K, temp, poss, names)
+        data_q, data_p = correct_format(data_q, data_p)
+        temp = repeat_algo(data_q, data_p, poss, simi, k_specific,pJ, n_trials)
+        # repeat_create_daten(q_alle, p_alle, K, temp, poss, names)
+        q_data_out, p_data_out = repeat_create_daten(q_alle, p_alle, K, temp, poss)
     else:
-        calc_p_q(data_p, data_q, names[0], names[1])
+        # calc_p_q(data_p, data_q, names[0], names[1])
+        q_data_out, p_data_out = calc_p_q(data_p, data_q)
     print("Successfully calculated the MLEs")
-    return 
+    return q_data_out, p_data_out 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Process input and output file names.")
+    parser = argparse.ArgumentParser(description="Process input file names.")
     parser.add_argument("data_q_input", type=str, help="The input file name for data_q")
     parser.add_argument("data_p_input", type=str, help="The input file name for data_p")
     parser.add_argument("pJ_input", type=str, help="The input file name for pJ, or '-1' if not provided")
-    parser.add_argument("data_q_output", type=str, help="The output file name for data_q")
-    parser.add_argument("data_p_output", type=str, help="The output file name for data_p")
     parser.add_argument("poss", type=str, help="The output file name for data_p")
 
     parser.add_argument("--k_specific", type=str, help="Specific input for P4 or P5, required if poss is P4 or P5")
@@ -907,18 +894,29 @@ if __name__ == "__main__":
     # Check if k_specific is required
     if args.poss in ["P4", "P5"] and not args.k_specific:
         raise ValueError("k_specific is required when poss is P4 or P5")
-    # Rufe die main-Funktion auf und übergebe die Input-Dateien
-    data_q, data_p, pJ, names, poss = main(args.data_q_input, args.data_p_input, args.pJ_input, args.data_q_output, args.data_p_output, args.poss)
-    
-    # Optionale Verarbeitung für pJ
-    if pJ is not None:
-        pJ = correct_formatJ(pJ)
+ 
+    # Read input files   
+    data_q = pd.read_csv(args.data_q_input, sep=' ', header=None)
+    data_p = pd.read_csv(args.data_p_input, sep=' ', header=None)
+
+    # Remove non-polymorphic loci
     data_p = data_p[~(data_p == 1).all(axis=1)]
+
+    # Optionale Verarbeitung für pJ
+    if args.pJ_input == "-1":
+        pJ = None
+    else:
+        pJ = pd.read_csv(args.pJ_input, sep=' ', header=None)
+        pJ = correct_formatJ(pJ)
 
     print("Input:", data_q, data_p, pJ)
 
-
-    q_alle, p_alle = correct_format(data_q, data_p)
     # Final Result
     K = data_p.shape[1]
-    res_algo_final = algo_final(q_alle, p_alle, K, poss,simi, names, k_specific, pJ, n_trials, data_p, data_q)
+    data_q_out, data_p_out = algo_final(data_q, data_p, K, args.poss, simi, k_specific, pJ, n_trials)
+
+    for d in data_q_out:
+        save_values(d["data"], f"{args.data_q_input}_{d["extension"]}")
+    for d in data_q_out:
+        save_values(d["data"], f"{args.data_p_input}_{d["extension"]}")
+
