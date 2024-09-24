@@ -17,7 +17,7 @@ if "uploaded_q_file" not in st.session_state:
 if "uploaded_p_file" not in st.session_state:
     st.session_state.uploaded_p_file = None
 if "poss" not in st.session_state:
-    st.session_state.poss = "P2" # Initial Value
+    st.session_state.poss = "P1" # Initial Value
 if "uploaded_pJ_file" not in st.session_state:
     st.session_state.uploaded_pJ_file = None
 
@@ -98,7 +98,7 @@ else:
 	  	M = data_p.shape[0]  
 	  	N = data_q.shape[0]
 
-    
+selected_individual = 0   
 if poss == "P1":
     individual_options = range(0, N) 
     # To do: in algo_final noch einbauen
@@ -121,7 +121,7 @@ if submit:
         st.rerun()
 
     data_p = pd.DataFrame(data_p)
-    data_q_out, data_p_out  = em.algo_final(data_q, data_p, K, poss, simi, k_specific, data_pJ, n_trials)
+    data_q_out, data_p_out  = em.algo_final(data_q, data_p, K, poss, simi, k_specific, data_pJ, n_trials, selected_individual)
 
     with st.expander(f'Graphical representation of input'):
         cols = st.columns([K] + [1 for i in range(K)])

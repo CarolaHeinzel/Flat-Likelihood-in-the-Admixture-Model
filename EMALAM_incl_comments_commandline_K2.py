@@ -230,9 +230,10 @@ def create_matrix_p(K, parameters):
 
 # Vektor with zeile_0 *x should be maximized or minimized
 # Only for P1 relevant
-def create_cons(A, poss, q_vectors):
+def create_cons(A, poss, index_individual, K):
+    index_individual = index_individual*2*K	
     if(poss == "P1"):
-        conse = A[0,]
+        conse = A[index_individual,]
     else:
         conse = 0
     return conse
@@ -591,7 +592,7 @@ def change_first_position(liste1):
     return res
 
 # Try every K IA of individual that should be maximized and minimized
-def repeat_algo(q_vectors, p_alle, poss, simi, k_specific,pJ, n_trials):
+def repeat_algo(q_vectors, p_alle, poss, simi, k_specific,pJ, n_trials, index_individual):
     '''
     Parameters
     ----------
@@ -628,7 +629,7 @@ def repeat_algo(q_vectors, p_alle, poss, simi, k_specific,pJ, n_trials):
         q_vec = q_tausch[i]
         p_vec = p_tausch[i]
         A = create_A(q_vec)
-        conse = create_cons(A, poss, q_vectors)
+        conse = create_cons(A, poss, index_individual, K)
         b_vek = create_b(q_vec)
         # Minimization for P1
         if(poss == "P1"):
@@ -834,7 +835,7 @@ def repeat_create_daten(q_alle, p_alle, K, parameters, poss):
     return res_q, res_p
 
 #def algo_final(q_vectors, p_alle, K, poss, simi, names, k_specific,pJ, n_trials,data_p, data_q):
-def algo_final(data_q, data_p, K, poss, simi, k_specific,pJ, n_trials):
+def algo_final(data_q, data_p, K, poss, simi, k_specific,pJ, n_trials, index_individual):
     '''
     Saves all values of q and p in .txt-file. For every calulated matrix
     P_K exisits one file that saves the corresponding qP_K and an other file
@@ -873,7 +874,7 @@ def algo_final(data_q, data_p, K, poss, simi, k_specific,pJ, n_trials):
     '''
     if(K > 2):
         data_q, data_p = correct_format(data_q, data_p)
-        temp = repeat_algo(data_q, data_p, poss, simi, k_specific,pJ, n_trials)
+        temp = repeat_algo(data_q, data_p, poss, simi, k_specific,pJ, n_trials, index_individual)
         # repeat_create_daten(q_alle, p_alle, K, temp, poss, names)
         q_data_out, p_data_out = repeat_create_daten(data_q, data_p, K, temp, poss)
     else:
