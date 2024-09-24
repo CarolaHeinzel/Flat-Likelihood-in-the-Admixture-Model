@@ -23,7 +23,7 @@ def read_table_data(file_path, K):
     res_all = np.zeros((0, K))
     for j, start_index in enumerate(start_indices):
         start_index += 1  # Move to the next line after "0.0% missing data"
-        
+
         # Find end index (first empty line after start index)
         end_index = start_index + next((i for i, line in enumerate(lines[start_index:], start=1) if line.strip() == ""), None)
         

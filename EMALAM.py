@@ -19,8 +19,8 @@ if "poss" not in st.session_state:
     st.session_state.poss = ""
 
 col1, col2 = st.columns([1,1])
-st.session_state.uploaded_q_file = col1.file_uploader("STRUCTURE output file for allele frequencies (q)")
-st.session_state.uploaded_p_file = col2.file_uploader("STRUCTURE output file for individual ancestries (p)")
+st.session_state.uploaded_q_file = col1.file_uploader("STRUCTURE output file for individual ancestries (q)")
+st.session_state.uploaded_p_file = col2.file_uploader("STRUCTURE output file for allele frequencies (p)")
 
 options = [f"P{i+1}" for i in range(5)]
 def format_func(poss):
@@ -60,45 +60,44 @@ if submit:
     k_specific = 0
     n_trials = 10 # Number of different initial values for the minimization function
 
-    res_algo_final = em.algo_final(data_q, data_p, K, poss, simi, k_specific, pJ, n_trials)
-
-    st.write(res_algo_final)
-
-#if st.session_state.uploaded_p_file is not None:
-#    p_df = pd.read_csv(st.session_state.uploaded_p_file, delimiter = "\t", header = None)
-#    M = p_df.shape[0]    
-#    K = p_df.shape[1]
-
-#st.session_state.uploaded_q_file = q_file
-#if st.session_state.uploaded_q_file is not None:
-#    q_df = pd.read_csv(st.session_state.uploaded_q_file, delimiter = "\t", header = None)
-#    N = q_df.shape[0]
-
-#cont0 = st.session_state.uploaded_p_file != "" and st.session_state.uploaded_q_file != ""
-
-
-
-
-
-
-if cont0:
-    if q_df.shape[1] != K:
+    if data_q.shape[1] != K:
         st.write("Number of columns in q-file must equal number of columns in p-file (number of populations)")
-    else:
-        cont1 = True
+        st.rerun()
 
-if cont1:
-    cols = st.columns([K] + [1 for i in range(K)])
-    with cols[0]:
-        st.bar_chart(q_df, horizontal=True)
-    for i in range(K):
-        with cols[i+1]:
-            p_df_loc = pd.DataFrame({'0' : p_df[i], '1': 1-p_df[i]})
-            st.bar_chart(p_df_loc, horizontal=True)
+    data_q_out, data_p_out  = em.algo_final(data_q, data_p, K, poss, simi, k_specific, pJ, n_trials)
 
+    with st.expander(f'Graphical representation of input'):
+        cols = st.columns([K] + [1 for i in range(K)])
+        with cols[0]:
+            # st.write(data_q)            
+            st.bar_chart(data_q, horizontal=True)
+        for i in range(K):
+            with cols[i+1]:
+                p_df_loc = pd.DataFrame({'0' : data_q[i], '1': 1-data_q[i]})
+                st.bar_chart(p_df_loc, horizontal=True)
 
+    with st.expander(f'Graphical representation of q (individual admixture)'):
+        cols = st.columns([1 for i in data_q_out])        
+        i = 0
+        for d in data_q_out:
+            with cols[i]:
+                # st.write(d["data"])
+                # st.write(d["extension"])
+                st.bar_chart(d["data"], horizontal=True)
+                i = i+1
+    with st.expander(f'Graphical representation of p (allele frequencies)'):
+        cols = st.columns([1 for i in data_p_out])        
+        i = 0
+        for d in data_p_out:
+            with cols[i]:
+                # st.write(d["data"])
+                # st.write(d["extension"])
+                co = st.columns([1 for i in range(K)])
+                for j in range(K):
+                    with co[j]:
+                        p_df_loc = pd.DataFrame({'0' : d["data"][j], '1': 1-d["data"][j]})
+                        st.bar_chart(p_df_loc, horizontal=True)
+                i = i+1
 
-
-# with st.expander(f'Graphical output for structure outputs', expanded = True if st.session_state.uploaded_file is not None else False):
 
 

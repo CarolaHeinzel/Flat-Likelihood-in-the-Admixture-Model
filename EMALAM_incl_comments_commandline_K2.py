@@ -100,10 +100,10 @@ def calc_p_q(data_p, data_q):
         p_min_1 = (data_p[0] - b_min*data_p[0] - a_min*data_p[1])/(1 - a_min - b_min)
         p_max_2 = (data_p[1] - a_max*data_p[1] - b_max*data_p[0])/(1 - a_max - b_max)
         p_min_2 = (data_p[1] - a_min*data_p[1] - b_min*data_p[0])/(1 - a_min - b_min)
-    result_qmax = [q_max.tolist(), (1-q_max).tolist()]
-    result_qmin = [q_min.tolist(), (1-q_min).tolist()]
-    result_pmax = [p_max_1.tolist(), p_max_2.tolist()]
-    result_pmin = [p_min_1.tolist(), p_min_2.tolist()]
+    result_qmax = pd.DataFrame([q_max.tolist(), (1-q_max).tolist()]).transpose()
+    result_qmin = pd.DataFrame([q_min.tolist(), (1-q_min).tolist()]).transpose()
+    result_pmax = pd.DataFrame([p_max_1.tolist(), p_max_2.tolist()]).transpose()
+    result_pmin = pd.DataFrame([p_min_1.tolist(), p_min_2.tolist()]).transpose()
 
     res_p.append({"data" : result_pmin, "extension" : "min"})
     res_p.append({"data" : result_pmax, "extension" : "max"})
