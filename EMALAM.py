@@ -4,25 +4,43 @@ import numpy as np
 import plotly.express as px
 
 import EMALAM_incl_comments_commandline_K2 as em
-
+import Extrahieren_p_q_python as ex
 st.set_page_config(page_title="EMALAM", page_icon=None, layout="wide", initial_sidebar_state="auto", menu_items=None)
 
 st.header("EMALAM")
 
 cont0 = cont1 = cont2 = False
 
+# Initialize session state variables
 if "uploaded_q_file" not in st.session_state:
-    st.session_state.uploaded_q_file = ""
+    st.session_state.uploaded_q_file = None
 if "uploaded_p_file" not in st.session_state:
-    st.session_state.uploaded_p_file = ""
+    st.session_state.uploaded_p_file = None
 if "poss" not in st.session_state:
-    st.session_state.poss = ""
+    st.session_state.poss = "P2" # Initial Value
+if "uploaded_pJ_file" not in st.session_state:
+    st.session_state.uploaded_pJ_file = None
 
-col1, col2 = st.columns([1,1])
-st.session_state.uploaded_q_file = col1.file_uploader("STRUCTURE output file for individual ancestries (q)")
-st.session_state.uploaded_p_file = col2.file_uploader("STRUCTURE output file for allele frequencies (p)")
+# Select input data type
+data_type = st.selectbox(
+    "Select the type of input data:",
+    options=["STRUCTURE Output", "Other"],  # Add other options as needed
+    index=0  # Set the default selected option to "STRUCTURE"
+)
 
+# File uploaders based on input type
+if data_type == "STRUCTURE Output":
+    st.session_state.uploaded_q_file = st.file_uploader("STRUCTURE output file")
+else:
+    col1, col2, col3 = st.columns([1,1,1])
+    st.session_state.uploaded_q_file = col1.file_uploader("STRUCTURE output file for individual ancestries (q)")
+    st.session_state.uploaded_p_file = col2.file_uploader("STRUCTURE output file for allele frequencies (p)")
+    st.session_state.uploaded_pJ_file = col3.file_uploader("STRUCTURE output file for allele frequencies (p) for K >= 3")
+
+# Define options for the selectbox
 options = [f"P{i+1}" for i in range(5)]
+
+# Function to format the display of the selectbox options
 def format_func(poss):
     if poss == "P1":
         return "(I) Maximize individual admixture of one individual"
@@ -35,27 +53,62 @@ def format_func(poss):
     elif poss == "P5":
         return "(IV) Minimize individual admixture of one population"
 
-poss = st.selectbox("Function which is optimized", options, index=None, format_func=format_func, key=None, help="See Documentation", on_change=None, args=None, kwargs=None, placeholder="Choose an option", disabled=False, label_visibility="visible")
+# Selectbox for choosing the function, linked to session state 'poss'
+poss = st.selectbox(
+    "Function which is optimized", 
+    options, 
+    index=None, 
+    format_func=format_func, 
+    key="poss",  # Bind to session state key 'poss'
+    help="See Documentation", 
+    placeholder="Choose an option", 
+    disabled=False, 
+    label_visibility="visible"
+)
 
+if(data_type != "STRUCTURE Output"):
+# Check if files are uploaded before processing them
+	if st.session_state.uploaded_p_file is not None:
+    		data_p = pd.read_csv(st.session_state.uploaded_p_file, delimiter=" ", header=None)
+    		M = data_p.shape[0]    
+    		K = data_p.shape[1]
+
+	if st.session_state.uploaded_pJ_file is not None:
+    		data_pJ = pd.read_csv(st.session_state.uploaded_pJ_file, delimiter=" ", header=None)
+    		M = data_pJ.shape[0]    
+    		K = data_pJ.shape[1]
+
+	if st.session_state.uploaded_q_file is not None:
+    		data_q = pd.read_csv(st.session_state.uploaded_q_file, delimiter=" ", header=None)
+    		N = data_q.shape[0]
+    		st.write(data_q)
+    		st.write(data_p)
+    		st.write(data_pJ)
+
+else:
+	if st.session_state.uploaded_q_file is not None:
+	
+	  	#with open(file_path, 'r') as file:
+	  	uploaded_file = st.session_state.uploaded_q_file.readlines()
+	  	K = 3
+	  	data_pJ, data_p = ex.read_table_data(uploaded_file, K)
+	  	data_q = ex.extract_q(uploaded_file, K)
+	  	st.write(data_p)
+	  	st.write(data_pJ)
+
+	  	st.write(data_q)
+
+    
 if poss == "P1":
-    st.st.selectbox("Which individual is maximized?")
-
-if st.session_state.uploaded_p_file != "":
-    data_p = pd.read_csv(st.session_state.uploaded_p_file, delimiter = " ", header = None)
-    M = data_p.shape[0]    
-    K = data_p.shape[1]
-
-if st.session_state.uploaded_q_file != "":
-    data_q = pd.read_csv(st.session_state.uploaded_q_file, delimiter = " ", header = None)
-    N = data_q.shape[0]
+    individual_options = range(0, N) 
+    selected_individual = st.selectbox("Which individual is maximized?", individual_options)
 
 submit = st.button("Submit")
 if submit:
     # Remove non-polymorphic loci
     data_p = data_p[~(data_p == 1).all(axis=1)]
 
-    pJ = None
-    poss = "P2"
+    pJ = data_pJ
     simi = 1
     k_specific = 0
     n_trials = 10 # Number of different initial values for the minimization function
@@ -64,17 +117,13 @@ if submit:
         st.write("Number of columns in q-file must equal number of columns in p-file (number of populations)")
         st.rerun()
 
-    data_q_out, data_p_out  = em.algo_final(data_q, data_p, K, poss, simi, k_specific, pJ, n_trials)
+    data_q_out, data_p_out  = em.algo_final(data_q, data_p, K, poss, simi, k_specific, data_pJ, n_trials)
 
     with st.expander(f'Graphical representation of input'):
         cols = st.columns([K] + [1 for i in range(K)])
         with cols[0]:
-            # st.write(data_q)            
             st.bar_chart(data_q, horizontal=True)
-        for i in range(K):
-            with cols[i+1]:
-                p_df_loc = pd.DataFrame({'0' : data_q[i], '1': 1-data_q[i]})
-                st.bar_chart(p_df_loc, horizontal=True)
+            st.bar_chart(data_p, horizontal=True)
 
     with st.expander(f'Graphical representation of q (individual admixture)'):
         cols = st.columns([1 for i in data_q_out])        
@@ -95,8 +144,9 @@ if submit:
                 co = st.columns([1 for i in range(K)])
                 for j in range(K):
                     with co[j]:
-                        p_df_loc = pd.DataFrame({'0' : d["data"][j], '1': 1-d["data"][j]})
-                        st.bar_chart(p_df_loc, horizontal=True)
+                        #p_df_loc = pd.DataFrame({'0' : d["data"][j], '1': 1-d["data"][j]})
+                        #st.bar_chart(p_df_loc, horizontal=True)
+                        st.bar_chart(d["data"][j], horizontal=True)
                 i = i+1
 
 

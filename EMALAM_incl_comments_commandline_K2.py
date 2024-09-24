@@ -1,4 +1,4 @@
-import numpy as np
+#import numpy as np
 import pandas as pd
 from sympy import symbols, Matrix
 from scipy.optimize import minimize
@@ -13,7 +13,7 @@ import argparse
 #file_path_pJ = '/home/ch1158/Downloads/p_CEU_IBS_TSI_K2_J'
 
 #data_q = pd.read_csv(file_path_q, sep=' ', header=None)
-
+print("EMALAM")
 def correct_formatJ(data_p):
     data_p = data_p.values.tolist()
     K = len(data_p[0]) # Number of populations
@@ -916,7 +916,7 @@ if __name__ == "__main__":
     data_q_out, data_p_out = algo_final(data_q, data_p, K, args.poss, simi, k_specific, pJ, n_trials)
 
     for d in data_q_out:
-        save_values(d["data"], f"{args.data_q_input}_{d["extension"]}")
+    	save_values(d["data"], f"{args.data_q_input}_{d['extension']}")
     for d in data_q_out:
-        save_values(d["data"], f"{args.data_p_input}_{d["extension"]}")
+    	save_values(d["data"], f"{args.data_p_input}_{d['extension']}")
 
