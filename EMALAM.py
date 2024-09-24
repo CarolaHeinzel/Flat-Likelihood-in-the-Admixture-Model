@@ -86,30 +86,33 @@ if(data_type != "STRUCTURE Output"):
     		st.write(data_pJ)
 
 else:
+	K = st.number_input("Number of Populations:", min_value=1, step=1)
+
 	if st.session_state.uploaded_q_file is not None:
 	
 	  	#with open(file_path, 'r') as file:
 	  	uploaded_file = st.session_state.uploaded_q_file.readlines()
-	  	K = 3
+
 	  	data_pJ, data_p = ex.read_table_data(uploaded_file, K)
 	  	data_q = ex.extract_q(uploaded_file, K)
-	  	st.write(data_p)
-	  	st.write(data_pJ)
-
-	  	st.write(data_q)
+	  	M = data_p.shape[0]  
+	  	N = data_q.shape[0]
 
     
 if poss == "P1":
     individual_options = range(0, N) 
+    # To do: in algo_final noch einbauen
     selected_individual = st.selectbox("Which individual is maximized?", individual_options)
-
+if poss == "P4" or poss == "P5":
+    individual_options = range(0, K) 
+    k_specific = st.selectbox("Which population should be considered?", individual_options)
 submit = st.button("Submit")
 if submit:
     # Remove non-polymorphic loci
     data_p = data_p[~(data_p == 1).all(axis=1)]
 
     pJ = data_pJ
-    simi = 1
+    simi = 0
     k_specific = 0
     n_trials = 10 # Number of different initial values for the minimization function
 
@@ -117,6 +120,7 @@ if submit:
         st.write("Number of columns in q-file must equal number of columns in p-file (number of populations)")
         st.rerun()
 
+    data_p = pd.DataFrame(data_p)
     data_q_out, data_p_out  = em.algo_final(data_q, data_p, K, poss, simi, k_specific, data_pJ, n_trials)
 
     with st.expander(f'Graphical representation of input'):
@@ -132,8 +136,10 @@ if submit:
             with cols[i]:
                 # st.write(d["data"])
                 # st.write(d["extension"])
-                st.bar_chart(d["data"], horizontal=True)
-                i = i+1
+              	st.write(data_q_out)
+              	#st.bar_chart(d, horizontal=True)
+              	i = i+1
+
     with st.expander(f'Graphical representation of p (allele frequencies)'):
         cols = st.columns([1 for i in data_p_out])        
         i = 0
@@ -146,7 +152,8 @@ if submit:
                     with co[j]:
                         #p_df_loc = pd.DataFrame({'0' : d["data"][j], '1': 1-d["data"][j]})
                         #st.bar_chart(p_df_loc, horizontal=True)
-                        st.bar_chart(d["data"][j], horizontal=True)
+                        #st.bar_chart(d["data"][j], horizontal=True)
+                        st.write(data_p_out)
                 i = i+1
 
 

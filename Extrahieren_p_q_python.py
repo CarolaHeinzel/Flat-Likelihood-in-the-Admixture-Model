@@ -5,9 +5,6 @@ import pandas as pd
 import io  
 
 
-K = 2  # Number of populations
-
-#%%
 def read_table_data(lines, K):
     # Konvertiere die Byte-Strings in eine lesbare Form
     output_text = ''.join([line.decode('utf-8') for line in lines])
@@ -53,7 +50,6 @@ def read_table_data(lines, K):
     if(len(res) == 0):
     	res = None
     return res, res_all
-
 
 
 def extract_q(lines, K):

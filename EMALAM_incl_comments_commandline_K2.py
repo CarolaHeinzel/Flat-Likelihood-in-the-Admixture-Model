@@ -1,4 +1,4 @@
-#import numpy as np
+import numpy as np
 import pandas as pd
 from sympy import symbols, Matrix
 from scipy.optimize import minimize
@@ -446,8 +446,9 @@ def constraints_all(A, b_vek, K, p_alle, q_alle, simi, pJ):
         constr = [
             {'type': 'ineq', 'fun': lambda x: constraint1(x, A, b_vek)},
             {'type': 'ineq', 'fun': lambda x: constraint2(x, p_alle, K)},
-            {'type': 'ineq', 'fun': lambda x: constraint3(x, p_alle, K)},
-            {'type': 'ineq', 'fun': lambda x: constraint_j(x, pJ, K)}]
+            {'type': 'ineq', 'fun': lambda x: constraint3(x, p_alle, K)}#,
+            #{'type': 'ineq', 'fun': lambda x: constraint_j(x, pJ, K)}
+            ]
             
             
     elif(pJ == 0 and simi == 0):
@@ -473,6 +474,7 @@ def initial(n_trials, cons, A, b_vek,p_alle,q_alle, K, simi, poss, k_specific, p
             result = minimize(target_function, x0, args=(cons,), constraints=constr, bounds = x_bounds)
         elif(poss == "P2" or poss == "P3"):
             result = minimize(target_function, x0, args=(q_alle,), constraints=constr, bounds = x_bounds)
+            print(result)
         else:
             result = minimize(target_function, x0, args=(q_alle, k_specific, ), constraints=constr, bounds = x_bounds)
 
@@ -741,7 +743,7 @@ def create_daten(q_alle, p_alle, K, param):
     for m in range(M):
         p_temp = matrix_inv@p_anders[m]
         res_p.append(p_temp) 
-    return res_q, res
+    return res_q, res_p
 
 # Transpose the matrix input_matrix
 def transpose_matrix(input_matrix):
@@ -873,7 +875,7 @@ def algo_final(data_q, data_p, K, poss, simi, k_specific,pJ, n_trials):
         data_q, data_p = correct_format(data_q, data_p)
         temp = repeat_algo(data_q, data_p, poss, simi, k_specific,pJ, n_trials)
         # repeat_create_daten(q_alle, p_alle, K, temp, poss, names)
-        q_data_out, p_data_out = repeat_create_daten(q_alle, p_alle, K, temp, poss)
+        q_data_out, p_data_out = repeat_create_daten(data_q, data_p, K, temp, poss)
     else:
         # calc_p_q(data_p, data_q, names[0], names[1])
         q_data_out, p_data_out = calc_p_q(data_p, data_q)
@@ -904,10 +906,10 @@ if __name__ == "__main__":
 
     # Optionale Verarbeitung für pJ
     if args.pJ_input == "-1":
-        pJ = None
+        pJ = 0
     else:
         pJ = pd.read_csv(args.pJ_input, sep=' ', header=None)
-        pJ = correct_formatJ(pJ)
+        pJ = 0 #correct_formatJ(pJ)
 
     print("Input:", data_q, data_p, pJ)
 
