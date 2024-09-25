@@ -68,35 +68,33 @@ poss = st.selectbox(
 
 if(data_type != "STRUCTURE Output"):
 # Check if files are uploaded before processing them
-	if st.session_state.uploaded_p_file is not None:
-    		data_p = pd.read_csv(st.session_state.uploaded_p_file, delimiter=" ", header=None)
-    		M = data_p.shape[0]    
-    		K = data_p.shape[1]
+    if st.session_state.uploaded_p_file is not None:
+        data_p = pd.read_csv(st.session_state.uploaded_p_file, delimiter=" ", header=None)
+        M = data_p.shape[0]    
+        K = data_p.shape[1]
 
-	if st.session_state.uploaded_pJ_file is not None:
-    		data_pJ = pd.read_csv(st.session_state.uploaded_pJ_file, delimiter=" ", header=None)
-    		M = data_pJ.shape[0]    
-    		K = data_pJ.shape[1]
+    if st.session_state.uploaded_pJ_file is not None:
+        data_pJ = pd.read_csv(st.session_state.uploaded_pJ_file, delimiter=" ", header=None)
+        M = data_pJ.shape[0]    
+        K = data_pJ.shape[1]
 
-	if st.session_state.uploaded_q_file is not None:
-    		data_q = pd.read_csv(st.session_state.uploaded_q_file, delimiter=" ", header=None)
-    		N = data_q.shape[0]
-    		st.write(data_q)
-    		st.write(data_p)
-    		st.write(data_pJ)
+    if st.session_state.uploaded_q_file is not None:
+        data_q = pd.read_csv(st.session_state.uploaded_q_file, delimiter=" ", header=None)
+        N = data_q.shape[0]
+        st.write(data_q)
+        st.write(data_p)
+        st.write(data_pJ)
 
 else:
-	K = st.number_input("Number of Populations:", min_value=1, step=1)
-
-	if st.session_state.uploaded_q_file is not None:
-	
+    K = st.number_input("Number of Populations:", min_value=1, step=1)
+    if st.session_state.uploaded_q_file is not None:
 	  	#with open(file_path, 'r') as file:
-	  	uploaded_file = st.session_state.uploaded_q_file.readlines()
+        uploaded_file = st.session_state.uploaded_q_file.readlines()
 
-	  	data_pJ, data_p = ex.read_table_data(uploaded_file, K)
-	  	data_q = ex.extract_q(uploaded_file, K)
-	  	M = data_p.shape[0]  
-	  	N = data_q.shape[0]
+        data_pJ, data_p = ex.read_table_data(uploaded_file, K)
+        data_q = ex.extract_q(uploaded_file, K)
+        M = data_p.shape[0]  
+        N = data_q.shape[0]
 
 selected_individual = 0   
 if poss == "P1":
@@ -138,7 +136,7 @@ if submit:
                 # st.write(d["extension"])
               	st.write(data_q_out)
               	#st.bar_chart(d, horizontal=True)
-              	i = i+1
+                i = i+1
 
     with st.expander(f'Graphical representation of p (allele frequencies)'):
         cols = st.columns([1 for i in data_p_out])        
