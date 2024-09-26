@@ -79,8 +79,8 @@ def determine_p(data_p):
 #%%
 
 # Calculation for K = 2
-#def calc_p_q(data_p, data_q, name_q, name_p):
-def calc_p_q(data_p, data_q):
+
+def calc_p_q(data_p, data_q, data_type):
     '''
     
     Calculates the maximal and minimal estimated IAs with the formula.
@@ -101,12 +101,16 @@ def calc_p_q(data_p, data_q):
         Vector b.
 
     '''
-    print(data_p, "data_q")
-    #data_q = data_q.values.tolist()
-    max_value = data_q[5].max()
-    min_value = data_q[5].min()
+
+
+    if(data_type == "STRUCTURE Output"):
+        max_value = data_q[5].max()
+        min_value = data_q[5].min()
+    else:
+        max_value = data_q[0].max()
+        min_value = data_q[0].min()    
     s1, sM = determine_p(data_p)
-    print(max_value)
+
     a_max = (s1-1)/(max_value/(1-max_value) + s1)
     b_max = 1 + a_max * (max_value/(1-max_value))
 
@@ -116,19 +120,21 @@ def calc_p_q(data_p, data_q):
     res_p = []
     res_q = []
       
-    N = len(data_q[5])
-    for i in range(N):
+    if(data_type ==  "STRUCTURE Output"):
         q_max = data_q[5]*(1-a_max) + (1-data_q[5])*b_max
         q_min = data_q[5]*(1-a_min) + (1-data_q[5])*b_min
-        p_max_1 = (data_p[0] - b_max*data_p[0] - a_max*data_p[1])/(1 - a_max - b_max)
-        p_min_1 = (data_p[0] - b_min*data_p[0] - a_min*data_p[1])/(1 - a_min - b_min)
-        p_max_2 = (data_p[1] - a_max*data_p[1] - b_max*data_p[0])/(1 - a_max - b_max)
-        p_min_2 = (data_p[1] - a_min*data_p[1] - b_min*data_p[0])/(1 - a_min - b_min)
+    else:
+        q_max = data_q[0]*(1-a_max) + (1-data_q[0])*b_max
+        
+        q_min = data_q[0]*(1-a_min) + (1-data_q[0])*b_min        
+    p_max_1 = (data_p[0] - b_max*data_p[0] - a_max*data_p[1])/(1 - a_max - b_max)
+    p_min_1 = (data_p[0] - b_min*data_p[0] - a_min*data_p[1])/(1 - a_min - b_min)
+    p_max_2 = (data_p[1] - a_max*data_p[1] - b_max*data_p[0])/(1 - a_max - b_max)
+    p_min_2 = (data_p[1] - a_min*data_p[1] - b_min*data_p[0])/(1 - a_min - b_min)
     result_qmax = pd.DataFrame([q_max.tolist(), (1-q_max).tolist()]).transpose()
     result_qmin = pd.DataFrame([q_min.tolist(), (1-q_min).tolist()]).transpose()
     result_pmax = pd.DataFrame([p_max_1.tolist(), p_max_2.tolist()]).transpose()
     result_pmin = pd.DataFrame([p_min_1.tolist(), p_min_2.tolist()]).transpose()
-
     res_p.append({"data" : result_pmin, "extension" : "min"})
     res_p.append({"data" : result_pmax, "extension" : "max"})
     res_q.append({"data" : result_qmin, "extension" : "min"})
@@ -859,7 +865,7 @@ def repeat_create_daten(q_alle, p_alle, K, parameters, poss):
     return res_q, res_p
 
 #def algo_final(q_vectors, p_alle, K, poss, simi, names, k_specific,pJ, n_trials,data_p, data_q):
-def algo_final(data_q, data_p, K, poss, simi, k_specific,pJ, n_trials, index_individual):
+def algo_final(data_q, data_p, K, poss, simi, k_specific,pJ, n_trials, index_individual, data_type):
     '''
     Saves all values of q and p in .txt-file. For every calulated matrix
     P_K exisits one file that saves the corresponding qP_K and an other file
@@ -896,14 +902,14 @@ def algo_final(data_q, data_p, K, poss, simi, k_specific,pJ, n_trials, index_ind
         All allele frequencies.
 
     '''
-    if(K > 2):
+    if((K > 2) or (K ==2 and (poss == "P2" or poss == "P3"))):
         data_q, data_p = correct_format(data_q, data_p)
         temp = repeat_algo(data_q, data_p, poss, simi, k_specific,pJ, n_trials, index_individual)
         # repeat_create_daten(q_alle, p_alle, K, temp, poss, names)
         q_data_out, p_data_out = repeat_create_daten(data_q, data_p, K, temp, poss)
     else:
         # calc_p_q(data_p, data_q, names[0], names[1])
-        q_data_out, p_data_out = calc_p_q(data_p, data_q)
+        q_data_out, p_data_out = calc_p_q(data_p, data_q, data_type)
     print("Successfully calculated the MLEs")
     return q_data_out, p_data_out 
 
