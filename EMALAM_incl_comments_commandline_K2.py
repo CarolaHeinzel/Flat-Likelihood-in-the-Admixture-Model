@@ -36,22 +36,44 @@ n_trials = 10 # Number of different initial values for the minimization function
 
 #%%
 def determine_p(data_p):
+    # Konvertiere die Spalten des DataFrames in Listen
     result_list = data_p[0].tolist()
     result_list1 = data_p[1].tolist()
+    
+    # Bestimme die Länge der Listen
     M = len(result_list)
-    s1 = 10**100
-    sM = -10**100
+    
+    # Initialisiere große positive und negative Werte
+    s1 = 10 ** 100
+    sM = -10 ** 100
     
     for m in range(M):
-        temp_p = (1-result_list1[m])/(1-result_list[m])
-        temp_p1 = result_list1[m]/result_list[m]
-        temp_min = min(temp_p, temp_p1)
-        temp_max = max(temp_p, temp_p1)
-        if(s1 > temp_min):
-            s1 = temp_min
-        if(sM < temp_max):
-            sM = temp_max
+        # Überprüfe, ob die Werte unterschiedlich sind
+        if result_list[m] != result_list1[m]:
+            # Berechne temp_p und temp_p1
+            if result_list[m] < 1:
+                temp_p = (1 - result_list1[m]) / (1 - result_list[m])
+            else:
+                temp_p = s1  # Setze temp_p auf s1, falls der Fall nicht zutrifft
+            
+            # Berechne temp_p1, vermeide Division durch 0
+            if result_list[m] > 0:
+                temp_p1 = result_list1[m] / result_list[m]
+            else:
+                temp_p1 = s1  # Setze temp_p1 auf s1, falls der Fall nicht zutrifft
+            
+            # Bestimme die minimalen und maximalen Werte
+            temp_min = min(temp_p, temp_p1)
+            temp_max = max(temp_p, temp_p1)
+            
+            # Aktualisiere s1 und sM
+            if s1 > temp_min:
+                s1 = temp_min
+            if sM < temp_max:
+                sM = temp_max
+    
     return s1, sM
+
 # print(determine_p(data_p))
 
 #%%
@@ -79,10 +101,12 @@ def calc_p_q(data_p, data_q):
         Vector b.
 
     '''
-    max_value = data_q[0].max()
-    min_value = data_q[0].min()
+    print(data_p, "data_q")
+    #data_q = data_q.values.tolist()
+    max_value = data_q[5].max()
+    min_value = data_q[5].min()
     s1, sM = determine_p(data_p)
-
+    print(max_value)
     a_max = (s1-1)/(max_value/(1-max_value) + s1)
     b_max = 1 + a_max * (max_value/(1-max_value))
 
@@ -92,10 +116,10 @@ def calc_p_q(data_p, data_q):
     res_p = []
     res_q = []
       
-    N = len(data_q[0])
+    N = len(data_q[5])
     for i in range(N):
-        q_max = data_q[0]*(1-a_max) + (1-data_q[0])*b_max
-        q_min = data_q[0]*(1-a_min) + (1-data_q[0])*b_min
+        q_max = data_q[5]*(1-a_max) + (1-data_q[5])*b_max
+        q_min = data_q[5]*(1-a_min) + (1-data_q[5])*b_min
         p_max_1 = (data_p[0] - b_max*data_p[0] - a_max*data_p[1])/(1 - a_max - b_max)
         p_min_1 = (data_p[0] - b_min*data_p[0] - a_min*data_p[1])/(1 - a_min - b_min)
         p_max_2 = (data_p[1] - a_max*data_p[1] - b_max*data_p[0])/(1 - a_max - b_max)
