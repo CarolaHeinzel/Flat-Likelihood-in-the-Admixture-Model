@@ -457,7 +457,8 @@ def constraint4(x, q_alle, p_alle, K):
 
 # Constraints for the minimization problem
 def constraints_all(A, b_vek, K, p_alle, q_alle, simi, pJ):
-    if(pJ!= 0 and simi == 1):
+    print(pJ)
+    if(type(pJ) == np.ndarray and simi == 1):
         constr = [
             {'type': 'ineq', 'fun': lambda x: constraint1(x, A, b_vek)},
             {'type': 'ineq', 'fun': lambda x: constraint2(x, p_alle, K)},
@@ -465,29 +466,30 @@ def constraints_all(A, b_vek, K, p_alle, q_alle, simi, pJ):
             {'type': 'ineq', 'fun': lambda x: constraint4(x, q_alle, p_alle, K)},
             {'type': 'ineq', 'fun': lambda x: constraint_j(x, pJ, K)}]
             
-    elif(pJ == 0 and simi == 1):
 
-        constr = [
-            {'type': 'ineq', 'fun': lambda x: constraint1(x, A, b_vek)},
-            {'type': 'ineq', 'fun': lambda x: constraint2(x, p_alle, K)},
-            {'type': 'ineq', 'fun': lambda x: constraint3(x, p_alle, K)},
-            {'type': 'ineq', 'fun': lambda x: constraint4(x, q_alle, p_alle, K)}]
             
-    elif(pJ!= 0 and simi == 0):
+    elif(type(pJ) == np.ndarray and simi == 0):
         constr = [
             {'type': 'ineq', 'fun': lambda x: constraint1(x, A, b_vek)},
             {'type': 'ineq', 'fun': lambda x: constraint2(x, p_alle, K)},
             {'type': 'ineq', 'fun': lambda x: constraint3(x, p_alle, K)}#,
             #{'type': 'ineq', 'fun': lambda x: constraint_j(x, pJ, K)}
             ]
-            
-            
-    elif(pJ == 0 and simi == 0):
-        constr = [
-            {'type': 'ineq', 'fun': lambda x: constraint1(x, A, b_vek)},
-            {'type': 'ineq', 'fun': lambda x: constraint2(x, p_alle, K)},
-            {'type': 'ineq', 'fun': lambda x: constraint3(x, p_alle, K)},
-            ]
+    elif(type(pJ) != np.ndarray):        
+    	if(pJ == 0 and simi == 1):
+
+        	constr = [
+        	    {'type': 'ineq', 'fun': lambda x: constraint1(x, A, b_vek)},
+        	    {'type': 'ineq', 'fun': lambda x: constraint2(x, p_alle, K)},
+        	    {'type': 'ineq', 'fun': lambda x: constraint3(x, p_alle, K)},
+        	    {'type': 'ineq', 'fun': lambda x: constraint4(x, q_alle, p_alle, K)}]
+                        
+    	elif(pJ == 0 and simi == 0):
+        	constr = [
+        	    {'type': 'ineq', 'fun': lambda x: constraint1(x, A, b_vek)},
+        	    {'type': 'ineq', 'fun': lambda x: constraint2(x, p_alle, K)},
+        	    {'type': 'ineq', 'fun': lambda x: constraint3(x, p_alle, K)},
+        	    ]
                         
     return constr
 
@@ -934,13 +936,14 @@ if __name__ == "__main__":
 
     # Remove non-polymorphic loci
     data_p = data_p[~(data_p == 1).all(axis=1)]
+    print("pJ", args.pJ_input)
 
     # Optionale Verarbeitung für pJ
-    if args.pJ_input == "-1":
+    if args.pJ_input == "-1" or args.pJ_input == None:
         pJ = 0
     else:
         pJ = pd.read_csv(args.pJ_input, sep=' ', header=None)
-        pJ = 0 #correct_formatJ(pJ)
+        pJ = correct_formatJ(pJ)
 
     print("Input:", data_q, data_p, pJ)
 

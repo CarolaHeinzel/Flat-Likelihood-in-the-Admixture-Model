@@ -32,6 +32,15 @@ def correct_format(data_q):
         q_alle.append(q1_vec)
     return q_alle
     
+# Determine K for the STRUCTURE File    
+def extract_population_count(file1):
+    output_text = ''.join([line.decode('utf-8') for line in file1])
+    match = re.search(r"(\d+)\s+populations assumed", output_text)
+
+    if match:
+        return int(match.group(1))  
+    else:
+        return None 
     
 # Select input data type
 data_type = st.selectbox(
@@ -85,6 +94,11 @@ poss = st.selectbox(
     disabled=False, 
     label_visibility="visible"
 )
+def load_default_file():
+    # Ersetze diesen Code mit dem Pfad zu deiner Standarddatei
+    default_file_path = 'Example_incl_Missing'  # Beispiel-Pfad zur Standarddatei
+    with open(default_file_path, 'rb') as f:
+        return f.readlines()
 
 if(data_type != "STRUCTURE Output"):
 # Check if files are uploaded before processing them
@@ -107,18 +121,32 @@ if(data_type != "STRUCTURE Output"):
     		st.write(data_pJ)
 
 else:
-	K = st.number_input("Number of Populations:", min_value=1, step=1)
 
 	if st.session_state.uploaded_q_file is not None:
 	
-	  	#with open(file_path, 'r') as file:
 	  	uploaded_file = st.session_state.uploaded_q_file.readlines()
+	  	K = extract_population_count(uploaded_file)
 
 	  	data_pJ, data_p, marker_names = ex.read_table_data(uploaded_file, K)
 	  	data_q, individual_names = ex.extract_q(uploaded_file, K)
 	  	M = data_p.shape[0]  
 	  	N = data_q.shape[0]
 	  	st.write(data_q, data_p, data_pJ)
+	  	print(type(data_pJ))
+	  	if(type(data_pJ) != np.ndarray):
+	  		if(data_pJ == None):
+	  			data_pJ = 0
+	else:
+   	 	uploaded_file = load_default_file()
+   	 	K = extract_population_count(uploaded_file)
+   	 	data_pJ, data_p, marker_names = ex.read_table_data(uploaded_file, K)
+   	 	data_q, individual_names = ex.extract_q(uploaded_file, K)
+   	 	M= data_p.shape[0] 
+   	 	N = data_q.shape[0]
+   	 	st.write(data_q, data_p, data_pJ)
+   	 	if(type(data_pJ) != np.ndarray):
+   	 		if(data_pJ == None):
+   	 			data_pJ = 0
 
 selected_individual = 0   
 if poss == "P1":
@@ -128,17 +156,21 @@ if poss == "P4" or poss == "P5":
     individual_options = range(0, K) 
     k_specific = st.selectbox("Which population should be considered?", individual_options)
 submit = st.button("Submit")
+
 if submit:
-    data_p = data_p[~(data_p == 1).all(axis=1)]
-    pJ = data_pJ
-    simi = 0
-    k_specific = 0
-    n_trials = 10
+    with st.spinner('The computer is calculating...'):
+
+
+	    data_p = data_p[~(data_p == 1).all(axis=1)]
+	    pJ = data_pJ
+	    simi = 0
+	    k_specific = 0
+	    n_trials = 10
 
 
 
-    data_p = pd.DataFrame(data_p)
-    data_q_out, data_p_out = em.algo_final(data_q, data_p, K, poss, simi, k_specific, data_pJ, n_trials, selected_individual, data_type)
+	    data_p = pd.DataFrame(data_p)
+	    data_q_out, data_p_out = em.algo_final(data_q, data_p, K, poss, simi, k_specific, data_pJ, n_trials, selected_individual, data_type)
 
     with st.expander('Input Data'):
         cols = st.columns([K] + [1 for _ in range(K)])
@@ -198,7 +230,7 @@ if submit:
             st.write(data_q_out)
         
             with cols[i]:
-                if K == 2:  # Überprüfen, ob K gleich 2 ist
+                if K == 2 and poss != "P2" and poss != "P3":  
                     #st.write(d["data"])
                     data_q = d["data"]
                     colors = plt.cm.tab10(np.linspace(0, 1, data_q.shape[1]))
@@ -256,7 +288,7 @@ if submit:
         for d in data_p_out:
             with cols[i]:
 
-                if(K == 2):
+                if(K == 2 and poss != "P2" and poss != "P3"):
                 
 
                     data_q = d["data"]
