@@ -96,7 +96,7 @@ poss = st.selectbox(
 )
 def load_default_file():
     # Ersetze diesen Code mit dem Pfad zu deiner Standarddatei
-    default_file_path = 'Example_incl_Missing'  # Beispiel-Pfad zur Standarddatei
+    default_file_path = 'Example_Output_STRUCTURE'  # Beispiel-Pfad zur Standarddatei
     with open(default_file_path, 'rb') as f:
         return f.readlines()
 
