@@ -56,7 +56,7 @@ else:
     col1, col2, col3 = st.columns([1,1,1])
     st.session_state.uploaded_q_file = col1.file_uploader("STRUCTURE output file for individual ancestries (q)")
     st.session_state.uploaded_p_file = col2.file_uploader("STRUCTURE output file for allele frequencies (p)")
-    st.session_state.uploaded_pJ_file = col3.file_uploader("STRUCTURE output file for allele frequencies (p) for K >= 3")
+    st.session_state.uploaded_pJ_file = col3.file_uploader("STRUCTURE output file for allele frequencies (p) for J >= 3")
 
     #markernames = st.checkbox("Markernames", value=False)
     #individual_names = st.checkbox("Individual names", value=False)
@@ -80,7 +80,7 @@ def format_func(poss):
     elif poss == "P4":
         return "(IV) Maximize individual admixture of one population"
     elif poss == "P5":
-        return "(IV) Minimize individual admixture of one population"
+        return "(V) Minimize individual admixture of one population"
 
 # Selectbox for choosing the function, linked to session state 'poss'
 poss = st.selectbox(
@@ -95,31 +95,50 @@ poss = st.selectbox(
     label_visibility="visible"
 )
 def load_default_file():
-    # Ersetze diesen Code mit dem Pfad zu deiner Standarddatei
-    default_file_path = 'Example_Output_STRUCTURE'  # Beispiel-Pfad zur Standarddatei
+    default_file_path = 'Example_Output_STRUCTURE'  
     with open(default_file_path, 'rb') as f:
         return f.readlines()
 
-if(data_type != "STRUCTURE Output"):
-# Check if files are uploaded before processing them
-	if st.session_state.uploaded_p_file is not None:
-    		data_p = pd.read_csv(st.session_state.uploaded_p_file, delimiter=" ", header=None)
-    		M = data_p.shape[0]    
-    		K = data_p.shape[1]
-    		marker_names = np.linspace(1,M, M)
 
-	if st.session_state.uploaded_pJ_file is not None:
-    		data_pJ = pd.read_csv(st.session_state.uploaded_pJ_file, delimiter=" ", header=None)
-    		K = data_pJ.shape[1]
+def load_default_file_notSTRUCTURE():
+    default_file_path_q = 'q_CEU_IBS_TSI_K2.txt'
+    default_file_path_p = 'p_CEU_IBS_TSI_K2' 
+    default_file_pJ = 0 
+    data_p = pd.read_csv(default_file_path_p, delimiter=" ", header=None)
+    data_q = pd.read_csv(default_file_path_q, delimiter=" ", header=None)
+    return data_q, data_p, default_file_pJ
+        
+        
+if data_type != "STRUCTURE Output":
+    if st.session_state.uploaded_p_file is not None:
+        data_p = pd.read_csv(st.session_state.uploaded_p_file, delimiter=" ", header=None)
+        M = data_p.shape[0]
+        K = data_p.shape[1]
+        m
 
-	if st.session_state.uploaded_q_file is not None:
-    		data_q = pd.read_csv(st.session_state.uploaded_q_file, delimiter=" ", header=None)
-    		N = data_q.shape[0]
-    		individual_names = np.linspace(1, N, N)
-    		st.write(data_q)
-    		st.write(data_p)
-    		st.write(data_pJ)
+    if st.session_state.uploaded_pJ_file is not None:
+        data_pJ = pd.read_csv(st.session_state.uploaded_pJ_file, delimiter=" ", header=None)
+        K = data_pJ.shape[1]
 
+    if st.session_state.uploaded_q_file is not None:
+        data_q = pd.read_csv(st.session_state.uploaded_q_file, delimiter=" ", header=None)
+        N = data_q.shape[0]
+        individual_names = np.linspace(1, N, N)
+        st.write(data_q)
+        st.write(data_p)
+        st.write(data_pJ)
+    else:
+        data_q, data_p, data_pJ = load_default_file_notSTRUCTURE()
+        M = data_p.shape[0]
+        K = data_p.shape[1]
+        N = data_q.shape[0]
+        st.write(data_q)
+        st.write(data_p)
+        st.write(data_pJ)
+        individual_names = np.linspace(1, N, N) 
+        marker_names = np.linspace(1, M, M)
+
+    		
 else:
 
 	if st.session_state.uploaded_q_file is not None:
@@ -315,28 +334,32 @@ if submit:
                     st.pyplot(fig)                
                 else:  
                 
-                    #st.write(data_p_out[0])
-                    data_p = data_p_out[0]
+                    st.write(data_p_out[0])
+                    data_q = data_p_out[0]
                     colors = plt.cm.tab10(np.linspace(0, 1, K))
 
-		
-                    p_alle_1 = np.transpose(data_p) 
+                    q_alle = data_q
+                    q_alle_1 = np.transpose(q_alle) 
 		     
                     fig, ax = plt.subplots(figsize=(20, 8))  
                     bottom = np.zeros(M)  
+                    bar_width = 0.15
 
                     for j in range(K):  
-                        ax.bar(range(M), p_alle_1[:, j], bottom=bottom, color=colors[j], label=f'Population {j + 1}')
-                        for l in range(len(bottom)):
-                        	bottom[l] += p_alle_1[l, j]  
-                    #ax.set_xticks(range(len(marker_names)))  
-                    ax.set_xticklabels(marker_names, rotation=90, ha='right') 
+                    	x_positions = np.arange(M) + j * bar_width  # Position für Population j
+                    	ax.bar(x_positions, q_alle_1[:, j], width=bar_width, color=colors[j], label=f'Population {j + 1}')
+			    
+                    ax.set_xticks([])  
 
                     ax.set_xlabel('Markers')
                     ax.set_ylabel('Estimated Allele Frequencies')
-                    ax.set_ylim(0, K)
+                    ax.set_ylim(0, 1)
                     ax.legend(title='Populations')  
+
                     st.pyplot(fig)
+
+
+
                 i = i+1
     if (data_type == "STRUCTURE Output"):
 

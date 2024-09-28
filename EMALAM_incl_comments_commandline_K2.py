@@ -936,7 +936,7 @@ if __name__ == "__main__":
 
     # Remove non-polymorphic loci
     data_p = data_p[~(data_p == 1).all(axis=1)]
-    print("pJ", args.pJ_input)
+    #print("pJ", args.pJ_input)
 
     # Optionale Verarbeitung für pJ
     if args.pJ_input == "-1" or args.pJ_input == None:
@@ -945,7 +945,7 @@ if __name__ == "__main__":
         pJ = pd.read_csv(args.pJ_input, sep=' ', header=None)
         pJ = correct_formatJ(pJ)
 
-    print("Input:", data_q, data_p, pJ)
+    #print("Input:", data_q, data_p, pJ)
 
     # Final Result
     K = data_p.shape[1]
