@@ -34,11 +34,11 @@ k_specific = 0
 n_trials = 10 # Number of different initial values for the minimization function
 # Names of the output files
 
-def main(data_q_input, data_p_input, pJ_input, data_q_output, data_p_output, poss):
+def main(data_q_input, data_p_input, pJ_input,pJ_all, data_q_output, data_p_output, poss, k_specific = None, indices_specific = None):
     # Lese den Inhalt der Input-Dateien ein
     data_q = pd.read_csv(data_q_input, sep=' ', header=None)
     data_p = pd.read_csv(data_p_input, sep=' ', header=None)
-    
+    pJ_all = pd.read_csv(pJ_all, sep=' ', header=None)
     if pJ_input == "-1":
         pJ = None
     else:
@@ -54,18 +54,21 @@ def main(data_q_input, data_p_input, pJ_input, data_q_output, data_p_output, pos
     # Erstelle die Liste der Dateinamen
     names = [data_q_output, data_p_output]
     
-    return data_q, data_p, pJ, names, poss
+    return data_q, data_p, pJ,pJ_all, names, poss, k_specific, indices_specific
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Process input and output file names.")
     parser.add_argument("data_q_input", type=str, help="The input file name for data_q")
     parser.add_argument("data_p_input", type=str, help="The input file name for data_p")
     parser.add_argument("pJ_input", type=str, help="The input file name for pJ, or '-1' if not provided")
+    parser.add_argument("pJ_all", type=str, help="The input file name for pJ_all, or '-1' if not provided")
+
     parser.add_argument("data_q_output", type=str, help="The output file name for data_q")
     parser.add_argument("data_p_output", type=str, help="The output file name for data_p")
     parser.add_argument("poss", type=str, help="The output file name for data_p")
 
-    parser.add_argument("--k_specific", type=str, help="Specific input for P4 or P5, required if poss is P4 or P5")
+    parser.add_argument("--k_specific", type=str, default = None, help="Specific input for Pop_max or Pop_min, required if poss is Pop_max or Pop_min")
+    parser.add_argument("--indices_specific", type=str, default = None, help="Specific input for Pop_max or Pop_max, default is [0]")
 
     args = parser.parse_args()
 
@@ -73,7 +76,8 @@ if __name__ == "__main__":
     if args.poss in ["P4", "P5"] and not args.k_specific:
         raise ValueError("k_specific is required when poss is P4 or P5")
     # Rufe die main-Funktion auf und übergebe die Input-Dateien
-    data_q, data_p, pJ, names, poss = main(args.data_q_input, args.data_p_input, args.pJ_input, args.data_q_output, args.data_p_output, args.poss)
+ 
+    data_q, data_p, pJ, pJ_all, names, poss, k_specific, indices_specific = main(args.data_q_input, args.data_p_input, args.pJ_input,args.pJ_all, args.data_q_output, args.data_p_output, args.poss, args.k_specific, args.indices_specific)
     
     # Optionale Verarbeitung für pJ
     if pJ is not None:
@@ -90,11 +94,10 @@ def determine_p(data_p):
     s1 = 10**100
     sM = -10**100
     
-    for m in range(M):
-        temp_p = (1-result_list1[m])/(1-result_list[m])
+    for m in range(M): # Every M and every p should be considered 
         temp_p1 = result_list1[m]/result_list[m]
-        temp_min = min(temp_p, temp_p1)
-        temp_max = max(temp_p, temp_p1)
+        temp_min = temp_p1
+        temp_max = temp_p1
         if(s1 > temp_min):
             s1 = temp_min
         if(sM < temp_max):
@@ -105,7 +108,7 @@ print(determine_p(data_p))
 #%%
 
 # Calculation for K = 2
-def calc_p_q(data_p, data_q, name_q, name_p):
+def calc_p_q(pJ_all, data_q, name_q, name_p):
     '''
     
     Calculates the maximal and minimal estimated IAs with the formula.
@@ -128,7 +131,7 @@ def calc_p_q(data_p, data_q, name_q, name_p):
     '''
     max_value = data_q[0].max()
     min_value = data_q[0].min()
-    s1, sM = determine_p(data_p)
+    s1, sM = determine_p(pJ_all)
 
     a_max = (s1-1)/(max_value/(1-max_value) + s1)
     b_max = 1 + a_max * (max_value/(1-max_value))
@@ -329,7 +332,7 @@ def objective_min(x, conse):
     return np.dot(conse, x)
 
 # Function that should be minimized with respect to x
-def entropy(x, q_alle):
+def entropy(x, q_alle, indices_specific):
     q_hier = change_format(q_alle)
     S = create_S(len(q_alle), np.array(x))
     N = len(q_alle[0])
@@ -344,12 +347,12 @@ def entropy(x, q_alle):
     return ent
 
 # Function that should be minimized with respect to x
-def entropy_pop_max(x, q_alle, k_specific):
+def entropy_pop_max(x, q_alle, k_specific, indices_specific):
     q_hier = change_format(q_alle)
     S = create_S(len(q_alle), np.array(x))
     N = len(q_alle[0])
     ent = 0
-    for i in range(N):
+    for i in indices_specific:
         p = np.dot(q_hier[i], S)
         p = p[k_specific]
         if(p > 0):
@@ -357,12 +360,12 @@ def entropy_pop_max(x, q_alle, k_specific):
     return ent
 
 # Function that should be minimized with respect to x
-def entropy_pop_min(x, q_alle, k_specific):
+def entropy_pop_min(x, q_alle, k_specific,indices_specific):
     q_hier = change_format(q_alle)
     S = create_S(len(q_alle), np.array(x))
     N = len(q_alle[0])
     ent = 0
-    for i in range(N):
+    for i in indices_specific:
         p = np.dot(q_hier[i], S)
         p = p[k_specific]
         if(p > 0):
@@ -370,7 +373,7 @@ def entropy_pop_min(x, q_alle, k_specific):
     return ent
 
 # Function that should be minimized with respect to x
-def entropy_max(x, q_alle):
+def entropy_max(x, q_alle, indices_specific):
     q_hier = change_format(q_alle)
     
     S = create_S(len(q_alle), np.array(x))
@@ -505,7 +508,7 @@ def constraints_all(A, b_vek, K, p_alle, q_alle, simi, pJ):
     return constr
 
 
-def initial(n_trials, cons, A, b_vek,p_alle,q_alle, K, simi, poss, k_specific, pJ, target_function):
+def initial(n_trials, cons, A, b_vek,p_alle,q_alle, K, simi, poss, k_specific, indices_specific, pJ, target_function):
     x_bounds = []
     for i in range(K*(K-1)):
         x_bounds.append((-2,2))
@@ -514,18 +517,16 @@ def initial(n_trials, cons, A, b_vek,p_alle,q_alle, K, simi, poss, k_specific, p
     best = None
     for _ in range(n_trials):
         x0 = np.random.uniform(low=[bound[0] for bound in x_bounds], high=[bound[1] for bound in x_bounds])
-        if(poss == "P1"):
-            result = minimize(target_function, x0, args=(cons,), constraints=constr, bounds = x_bounds)
-        elif(poss == "P2" or poss == "P3"):
-            result = minimize(target_function, x0, args=(q_alle,), constraints=constr, bounds = x_bounds)
+        if(poss == "E_min" or poss == "E_max"):
+            result = minimize(target_function, x0, args=(q_alle,indices_specific, ), constraints=constr, bounds = x_bounds)
         else:
-            result = minimize(target_function, x0, args=(q_alle, k_specific, ), constraints=constr, bounds = x_bounds)
+            result = minimize(target_function, x0, args=(q_alle, k_specific, indices_specific, ), constraints=constr, bounds = x_bounds)
 
         if result.success and (best is None or best.fun > result.fun):
             best = result
     return best
 
-def algorithm_max(cons, A, b_vek,p_alle,q_alle, K, simi, poss, k_specific, pJ, n_trials):
+def algorithm_max(cons, A, b_vek,p_alle,q_alle, K, simi, poss, k_specific,indices_specific, pJ, n_trials):
     '''
     
     Calculates the optimal parameter for one case, e.g. find the parameters that
@@ -565,16 +566,14 @@ def algorithm_max(cons, A, b_vek,p_alle,q_alle, K, simi, poss, k_specific, pJ, n
 
     '''
 
-    if(poss == "P1"):
-        result = initial(n_trials, cons, A, b_vek,p_alle,q_alle, K, simi, poss, k_specific, pJ, objective)
-    elif(poss == "P2"):
-        result = initial(n_trials, cons, A, b_vek,p_alle,q_alle, K, simi, poss, k_specific, pJ, entropy_max)
-    elif(poss == "P3"):
-        result = initial(n_trials, cons, A, b_vek,p_alle,q_alle, K, simi, poss, k_specific, pJ, entropy)
-    elif(poss == "P4"):
-        result = initial(n_trials, cons, A, b_vek,p_alle,q_alle, K, simi, poss, k_specific, pJ, entropy_pop_min)
-    elif(poss == "P5"):
-        result = initial(n_trials, cons, A, b_vek,p_alle,q_alle, K, simi, poss, k_specific, pJ, entropy_pop_max)
+    if(poss == "E_max"):
+        result = initial(n_trials, cons, A, b_vek,p_alle,q_alle, K, simi, poss, k_specific, indices_specific, pJ, entropy_max)
+    elif(poss == "E_min"):
+        result = initial(n_trials, cons, A, b_vek,p_alle,q_alle, K, simi, poss, k_specific, indices_specific, pJ, entropy)
+    elif(poss == "P_max"):
+        result = initial(n_trials, cons, A, b_vek,p_alle,q_alle, K, simi, poss, k_specific,indices_specific,  pJ, entropy_pop_min)
+    elif(poss == "P_min"):
+        result = initial(n_trials, cons, A, b_vek,p_alle,q_alle, K, simi, poss, k_specific,indices_specific,  pJ, entropy_pop_max)
     return result.x
 
 def algorithm_min(cons, A, b_vek,p_alle,q_alle, K, simi, poss, k_specific, pJ, n_trials):
@@ -634,7 +633,7 @@ def change_first_position(liste1):
     return res
 
 # Try every K IA of individual that should be maximized and minimized
-def repeat_algo(q_vectors, p_alle, poss, simi, k_specific,pJ, n_trials):
+def repeat_algo(q_vectors, p_alle, poss, simi, k_specific,indices_specific, pJ, n_trials):
     '''
     Parameters
     ----------
@@ -673,12 +672,8 @@ def repeat_algo(q_vectors, p_alle, poss, simi, k_specific,pJ, n_trials):
         A = create_A(q_vec)
         conse = create_cons(A, poss, q_vectors)
         b_vek = create_b(q_vec)
-        # Minimization for P1
-        if(poss == "P1"):
-            res = algorithm_min(conse, A, b_vek,p_vec,q_vec, K, simi, poss, k_specific, pJ, n_trials)
-            res_a.append(res)
-        # Minimization for the other cases
-        res = algorithm_max(conse, A, b_vek,p_vec,q_vec, K, simi, poss, k_specific, pJ, n_trials)
+
+        res = algorithm_max(conse, A, b_vek,p_vec,q_vec, K, simi, poss, k_specific, indices_specific, pJ, n_trials)
         res_a.append(res)
     return res_a
 
@@ -873,7 +868,7 @@ def repeat_create_daten(q_alle, p_alle, K, parameters, poss, names):
         save_values(p, name_p, 0)
     return
 
-def algo_final(q_vectors, p_alle, K, poss, simi, names, k_specific,pJ, n_trials,data_p, data_q):
+def algo_final(q_vectors, p_alle,pJ_all, K, poss, simi, names, k_specific,indices_specific, pJ, n_trials,data_p, data_q):
     '''
     Saves all values of q and p in .txt-file. For every calulated matrix
     P_K exisits one file that saves the corresponding qP_K and an other file
@@ -909,15 +904,15 @@ def algo_final(q_vectors, p_alle, K, poss, simi, names, k_specific,pJ, n_trials,
     None.
 
     '''
-    if(K > 2):
-        temp = repeat_algo(q_vectors, p_alle, poss, simi, k_specific,pJ, n_trials)
+    if(K > 2 and poss != "P_min" and poss!= "P_max"):
+        temp = repeat_algo(q_vectors, p_alle, poss, simi, k_specific,indices_specific, pJ, n_trials)
         repeat_create_daten(q_alle, p_alle, K, temp, poss, names)
     else:
-        calc_p_q(data_p, data_q, names[0], names[1])
+        calc_p_q(pJ_all, data_q, names[0], names[1])
     print("Successfully calculated the MLEs")
     return 
 
 q_alle, p_alle = correct_format(data_q, data_p)
 # Final Result
 K = data_p.shape[1]
-res_algo_final = algo_final(q_alle, p_alle, K, poss,simi, names, k_specific, pJ, n_trials, data_p, data_q)
+res_algo_final = algo_final(q_alle, p_alle,pJ_all, K, poss,simi, names, k_specific, indices_specific, pJ, n_trials, data_p, data_q)
