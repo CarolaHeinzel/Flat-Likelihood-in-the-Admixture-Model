@@ -18,7 +18,8 @@ def split_array(arr, K):
     l = len(arr)
     l = int(l/K)
     temp = np.reshape(arr, (l, K))
-    return temp[0].tolist()
+    print(temp, "t")
+    return temp.tolist()
 
 # Function to read table data
 def read_table_data_all(file_path, K):
@@ -63,4 +64,31 @@ def read_table_data_all(file_path, K):
 
 # Call the function to read data
 p = read_table_data_all(file_pathK, K)
+
+def format_and_save(data, K):
+    # Flatten the nested list
+    flattened_data = [item for sublist in data for row in sublist for item in row]
+
+    # Split the flattened list into chunks of size K
+    reshaped_data = [flattened_data[i:i+K] for i in range(0, len(flattened_data), K)]
+    return reshaped_data
+    # Save the reshaped data to a file
+
+# Beispiel Daten
+data = [
+    [[0.13, 0.659]],
+    [[0.735, 0.998], [0.265, 0.002]],
+    [[0.708, 0.824], [0.292, 0.176]]
+]
+
+# Anzahl der Elemente pro Liste (K)
+K = 2
+
+# Funktion aufrufen und Datei speichern
+res = format_and_save(p, K)
+
+#%%
+
+np.savetxt("C:\\Users\\carol\\Downloads\\all_p", res, delimiter=" ", fmt="%f")
+
 
