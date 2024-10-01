@@ -11,8 +11,10 @@ df.insert(loc=2, column = "LOC", value = df_full.iloc[5:, 2].to_list())
 df.set_index("ID", inplace=True)
 df.dropna(how='all', axis=1, inplace=True)
 
+# Extract only European and Middle East samples
+df = df[[("EURO" in i or "MIDDLE" in i) for i in df["POP"]]]
+
 pops = list(set(df["POP"]))
-print("Populations are \n" + "\n".join(pops))
 df["POP"] = [pops.index(i) for i in df["POP"]]
 
 locs = list(set(df["LOC"]))
@@ -46,9 +48,7 @@ with open(filename, "w") as f:
     for index, row in df.iterrows():
         data = row[2:].to_list()
         first_row, second_row = get_data(data)
-        print(first_row)
-        print(second_row)
         f.writelines('\t'.join([index, str(row["POP"]), str(row["LOC"])] + first_row) + '\n')
         f.writelines('\t'.join([index, str(row["POP"]), str(row["LOC"])] + second_row) + '\n')
         
-
+print(df.shape)

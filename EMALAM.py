@@ -7,13 +7,12 @@ import re
 
 import EMALAM_incl_comments_commandline_K2 as em
 import Extrahieren_p_q_python as ex
+
 st.set_page_config(page_title="EMALAM", page_icon=None, layout="wide", initial_sidebar_state="auto", menu_items=None)
 
-st.header("EMALAM")
-
-cont0 = cont1 = cont2 = False
-K = -1 # default value
 # Initialize session state variables
+if "uploaded_structure_file" not in st.session_state:
+    st.session_state.uploaded_structure_file = None
 if "uploaded_q_file" not in st.session_state:
     st.session_state.uploaded_q_file = None
 if "uploaded_p_file" not in st.session_state:
@@ -22,6 +21,26 @@ if "poss" not in st.session_state:
     st.session_state.poss = "P4" # Initial Value
 if "uploaded_pJ_file" not in st.session_state:
     st.session_state.uploaded_pJ_file = None
+if "data_uploaded" not in st.session_state:
+    st.session_state.data_uploaded = None
+
+def load_default_file():
+    default_file_path = 'Example_Output_STRUCTURE'  
+    with open(default_file_path, 'rb') as f:
+        return f.readlines()
+
+default_file_path_q = 'q_CEU_IBS_TSI_K2.txt'
+default_file_path_p = 'p_CEU_IBS_TSI_K2' 
+default_file_pJ = 0 
+
+def load_default_file_notSTRUCTURE(default_file_path_q, default_file_path_p, default_file_pJ):
+    data_p = pd.read_csv(default_file_path_p, delimiter=" ", header=None)
+    data_q = pd.read_csv(default_file_path_q, delimiter=" ", header=None)
+    if default_file_pJ:
+        data_J = pd.read_csv(default_file_pJ, delimiter=" ", header=None)
+    else:
+         data_J = 0     
+    return data_q, data_p, data_J
 
 def correct_format(data_q):
     data_q = data_q.values.tolist()
@@ -41,22 +60,48 @@ def extract_population_count(file1):
         return int(match.group(1))  
     else:
         return None 
-    
-# Select input data type
-data_type = st.selectbox(
-    "Select the type of input data:",
-    options=["STRUCTURE Output", "Other"],  # Add other options as needed
-    index=0  # Set the default selected option to "STRUCTURE"
+
+st.header("EMALAM")
+st.write("See xxx for a reference what this webpage is about.")
+st.write("You can use an output file of STRUCTURE, which will then be sorted into $q$- and $p$-matrices.")
+st.write("For the other case, you must upload two files (for bi-allelic loci) or three files (of some alleles are multi-allelic).:\n  * The $q$-file of individual admixtures;\n  * The $p$-file of allele frequencies in all populations;\n  * Some J file??")
+
+default_options = ["Example [STRUCTURE output data](github.com)", "Example [other data](github.com)", "Upload own data"]
+default = st.radio(
+    "Which file(s) should be used?",
+    options = default_options,
+    index = 0,
 )
 
-# File uploaders based on input type
-if data_type == "STRUCTURE Output":
-    st.session_state.uploaded_q_file = st.file_uploader("STRUCTURE output file")
-else:
-    col1, col2, col3 = st.columns([1,1,1])
-    st.session_state.uploaded_q_file = col1.file_uploader("STRUCTURE output file for individual ancestries (q)")
-    st.session_state.uploaded_p_file = col2.file_uploader("STRUCTURE output file for allele frequencies (p)")
-    st.session_state.uploaded_pJ_file = col3.file_uploader("STRUCTURE output file for allele frequencies (p) for J >= 3")
+if default == default_options[0]:
+    use_structure_file = True
+    ## read default files
+elif default == default_options[1]:
+    use_other_file = True
+    ## read default files    
+elif default == default_options[2]:
+    # Select input data type
+    data_type_options = ["STRUCTURE Output", "Other"]
+    data_type = st.selectbox(
+        "Select the type of input data:",
+        options=data_type_options,  # Add other options as needed
+        index=0  # Set the default selected option to "STRUCTURE"
+    )
+    use_structure_file = (data_type == data_type_options[0])
+    use_other_file = (data_type == data_type_options[1])
+    
+    # File uploaders based on input type
+    if data_type == data_type_options[0]:
+        use_structure_file = True
+        st.session_state.uploaded_structure_file = st.file_uploader("STRUCTURE output file")
+    else:
+        use_other_file = True
+        col1, col2, col3 = st.columns([1,1,1])
+        st.session_state.uploaded_q_file = col1.file_uploader("STRUCTURE output file for individual ancestries (q)")
+        st.session_state.uploaded_p_file = col2.file_uploader("STRUCTURE output file for allele frequencies (p)")
+        st.session_state.uploaded_pJ_file = col3.file_uploader("STRUCTURE output file for allele frequencies (p) for J >= 3")
+
+
 
     #markernames = st.checkbox("Markernames", value=False)
     #individual_names = st.checkbox("Individual names", value=False)
@@ -66,50 +111,22 @@ else:
     #if individual_names:
     #	st.session_state.individual_names_file = st.file_uploader("Upload Individual Names file")
 
-# Define options for the selectbox
-options = [f"P{i+1}" for i in range(5)]
-
-# Function to format the display of the selectbox options
-def format_func(poss):
-    if poss == "P1":
-        return "(I) Maximize individual admixture of one individual"
-    elif poss == "P2":
-        return "(II) Maximize the average entropy (favours admixed individuals)"
-    elif poss == "P3":
-        return "(III) Minimize the average entropy (favours non-admixed individuals)"
-    elif poss == "P4":
-        return "(IV) Maximize individual admixture of one population"
-    elif poss == "P5":
-        return "(V) Minimize individual admixture of one population"
-
-# Selectbox for choosing the function, linked to session state 'poss'
-poss = st.selectbox(
-    "Function which is optimized", 
-    options, 
-    index=None, 
-    format_func=format_func, 
-    key="poss",  # Bind to session state key 'poss'
-    help="See Documentation", 
-    placeholder="Choose an option", 
-    disabled=False, 
-    label_visibility="visible"
-)
-def load_default_file():
-    default_file_path = 'Example_Output_STRUCTURE'  
-    with open(default_file_path, 'rb') as f:
-        return f.readlines()
 
 
-def load_default_file_notSTRUCTURE():
-    default_file_path_q = 'q_CEU_IBS_TSI_K2.txt'
-    default_file_path_p = 'p_CEU_IBS_TSI_K2' 
-    default_file_pJ = 0 
-    data_p = pd.read_csv(default_file_path_p, delimiter=" ", header=None)
-    data_q = pd.read_csv(default_file_path_q, delimiter=" ", header=None)
-    return data_q, data_p, default_file_pJ
-        
-        
-if data_type != "STRUCTURE Output":
+if st.session_state.data_uploaded == True:
+    # Selectbox for choosing the function, linked to session state 'case'
+    case_options = ["(I) Minimize/Maximize average contribution from population i", "(II) Minimize/Maximize average entropy"]
+    # Add other options as needed
+
+    case = st.selectbox(
+        "Function which is optimized:",
+        options=case_options, 
+        index=0,  # Set the default selected option to "entropy"
+        help = "Maximal entropy favours admixed individuals, minimal entropy favours non-admixed individuals."
+    )
+
+
+if data_type != data_type_options[0]:
     if st.session_state.uploaded_p_file is not None:
         data_p = pd.read_csv(st.session_state.uploaded_p_file, delimiter=" ", header=None)
         M = data_p.shape[0]
