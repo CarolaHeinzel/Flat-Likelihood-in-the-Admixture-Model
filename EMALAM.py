@@ -168,7 +168,7 @@ else:
 	  	print(p_all)
 	  	M = data_p.shape[0]  
 	  	N = data_q.shape[0]
-	  	st.write(data_q, data_p, data_pJ)
+	  	st.write(data_q, data_p, data_pJ, p_all)
 	  	print(type(data_pJ))
 	  	if(type(data_pJ) != np.ndarray):
 	  		if(data_pJ == None):
@@ -182,7 +182,7 @@ else:
 
    	 	M= data_p.shape[0] 
    	 	N = data_q.shape[0]
-   	 	st.write(data_q, data_p, data_pJ)
+   	 	st.write(data_q, data_p, data_pJ, p_all)
    	 	if(type(data_pJ) != np.ndarray):
    	 		if(data_pJ == None):
    	 			data_pJ = 0
