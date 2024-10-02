@@ -165,7 +165,6 @@ else:
 
 	  	data_pJ, data_p, marker_names, p_all = ex.read_table_data(uploaded_file, K)
 	  	data_q, individual_names = ex.extract_q(uploaded_file, K)
-	  	p_all = ex.(uploaded_file, K)
 	  	print(p_all)
 	  	M = data_p.shape[0]  
 	  	N = data_q.shape[0]
