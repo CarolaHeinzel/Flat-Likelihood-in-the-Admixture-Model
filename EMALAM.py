@@ -176,13 +176,14 @@ else:
 	else:
    	 	uploaded_file = load_default_file()
    	 	K = extract_population_count(uploaded_file)
+   	 	st.write(K)
    	 	data_pJ, data_p, marker_names, p_all = ex.read_table_data(uploaded_file, K)
    	 	print(p_all)
    	 	data_q, individual_names = ex.extract_q(uploaded_file, K)
 
    	 	M= data_p.shape[0] 
    	 	N = data_q.shape[0]
-   	 	st.write(data_q, data_p, data_pJ, p_all, type(p_all), len(p_all), len(p_all[0]))
+   	 	st.write(data_q, data_p, data_pJ, p_all)
    	 	if(type(data_pJ) != np.ndarray):
    	 		if(data_pJ == None):
    	 			data_pJ = 0
