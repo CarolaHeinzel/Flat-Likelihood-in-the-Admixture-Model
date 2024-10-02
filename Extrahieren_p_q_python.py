@@ -4,6 +4,17 @@ import numpy as np
 import pandas as pd
 import io  
 
+
+# Extract p all
+def split_array(arr, K):
+    print(arr)
+    l = len(arr)
+    l = int(l/K)
+    temp = np.reshape(arr, (l, K))
+    print(temp, "t")
+    return temp.tolist()
+
+
 # Extract p
 def read_table_data(lines, K):
 
@@ -35,9 +46,25 @@ def read_table_data(lines, K):
                     res = np.vstack([res, res1])
                     res_all = np.vstack([res_all, numeric_values[K:2*K]])
                 res_all = np.vstack([res_all, numeric_values[:K]])
+    for j, start_index in enumerate(start_indices):
+        start_index += 1  # Move to the next line after "0.0% missing data"
+
+        # Find end index (first empty line after start index)
+        end_index = start_index + next((i for i, line in enumerate(output_text.splitlines()[start_index:], start=1) if line.strip() == ""), None)
+        # Combine the relevant lines into a single string
+        text = "\n".join(output_text.splitlines()[start_index:end_index])
+        if (start_index - end_index) < -2:
+            # Remove the numbers followed by (0.x) as in R gsub() 
+            modified_text = re.sub(r"\s+[0-9]+\s*\(0\.[0-9]+\)", "", text)
+            # Split the modified text by spaces and filter out empty strings
+            values = [val for val in modified_text.split() if val != ""]
+            numeric_values = np.array(values, dtype=float)
+            # Sum corresponding values for the two K sections
+
+            res.append(split_array(numeric_values, K))
     if(len(res) == 0):
     	res = None
-    return res, res_all, locus_matches
+    return res, res_all, locus_matches, res
 
 # Extract q
 def extract_q(lines, K):
@@ -54,50 +81,6 @@ def extract_q(lines, K):
     return res_final, individuals_names
 
 
-# Extract p all
-def split_array(arr, K):
-    print(arr)
-    l = len(arr)
-    l = int(l/K)
-    temp = np.reshape(arr, (l, K))
-    print(temp, "t")
-    return temp.tolist()
 
-def read_table_data_all(lines, K):
-
-    start_indices = [i for i, line in enumerate(lines) if " missing data" in line]
-    
-    res = []
-
-    # Regex-Muster für das Extrahieren des Wertes nach "Locus"
-    pattern = r'Locus\s+\d+\s*:\s*(\S+)'
-# Liste, um die gefundenen Locus-Werte zu speichern
-    locus_matches = []
-
-
-    for line in lines:
-
-        match = re.search(pattern, line)
-        if match:
-
-            locus_matches.append(match.group(1))
-    for j, start_index in enumerate(start_indices):
-        start_index += 1  # Move to the next line after "0.0% missing data"
-
-        # Find end index (first empty line after start index)
-        end_index = start_index + next((i for i, line in enumerate(lines[start_index:], start=1) if line.strip() == ""), None)
-        # Combine the relevant lines into a single string
-        text = "\n".join(lines[start_index:end_index])
-        if (start_index - end_index) < -2:
-            # Remove the numbers followed by (0.x) as in R gsub() 
-            modified_text = re.sub(r"\s+[0-9]+\s*\(0\.[0-9]+\)", "", text)
-            # Split the modified text by spaces and filter out empty strings
-            values = [val for val in modified_text.split() if val != ""]
-            numeric_values = np.array(values, dtype=float)
-            # Sum corresponding values for the two K sections
-
-            res.append(split_array(numeric_values, K))
-
-    return res
 
 
