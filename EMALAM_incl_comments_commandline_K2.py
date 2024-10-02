@@ -57,7 +57,7 @@ def determine_p(data_p):
 #%%
 
 # Calculation for K = 2
-def calc_p_q(pJ_all, data_q, name_q, name_p):
+def calc_p_q(pJ_all, data_q, data_type):
     '''
     
     Calculates the maximal and minimal estimated IAs with the formula.
@@ -102,10 +102,10 @@ def calc_p_q(pJ_all, data_q, name_q, name_p):
     result_pmax = [p_max_1.tolist(), p_max_2.tolist()]
     result_pmin = [p_min_1.tolist(), p_min_2.tolist()]
 
-    save_values(result_qmax, name_q, "max")
-    save_values(result_pmax, name_p, "max")
-    save_values(result_qmin, name_q, "min")
-    save_values(result_pmin, name_p, "min")
+    res_p.append({"data" : result_pmin, "extension" : "min"})
+    res_p.append({"data" : result_pmax, "extension" : "max"})
+    res_q.append({"data" : result_qmin, "extension" : "min"})
+    res_q.append({"data" : result_qmax, "extension" : "max"})
     return
 #%%
 # 2) Execute the functions
