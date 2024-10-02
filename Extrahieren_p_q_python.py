@@ -46,6 +46,7 @@ def read_table_data(lines, K):
                     res = np.vstack([res, res1])
                     res_all = np.vstack([res_all, numeric_values[K:2*K]])
                 res_all = np.vstack([res_all, numeric_values[:K]])
+    res_allp = []
     for j, start_index in enumerate(start_indices):
         start_index += 1  # Move to the next line after "0.0% missing data"
 
@@ -61,10 +62,10 @@ def read_table_data(lines, K):
             numeric_values = np.array(values, dtype=float)
             # Sum corresponding values for the two K sections
 
-            res.append(split_array(numeric_values, K))
+            res_allp.append(split_array(numeric_values, K))
     if(len(res) == 0):
     	res = None
-    return res, res_all, locus_matches, res
+    return res, res_all, locus_matches, res_allp
 
 # Extract q
 def extract_q(lines, K):
