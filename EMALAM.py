@@ -165,6 +165,8 @@ else:
 
 	  	data_pJ, data_p, marker_names = ex.read_table_data(uploaded_file, K)
 	  	data_q, individual_names = ex.extract_q(uploaded_file, K)
+	  	p_all = ex.read_table_data_all(uploaded_file, K)
+	  	print(p_all)
 	  	M = data_p.shape[0]  
 	  	N = data_q.shape[0]
 	  	st.write(data_q, data_p, data_pJ)
@@ -177,6 +179,8 @@ else:
    	 	K = extract_population_count(uploaded_file)
    	 	data_pJ, data_p, marker_names = ex.read_table_data(uploaded_file, K)
    	 	data_q, individual_names = ex.extract_q(uploaded_file, K)
+   	 	p_all = ex.read_table_data_all(uploaded_file, K)
+	  	print(p_all)
    	 	M= data_p.shape[0] 
    	 	N = data_q.shape[0]
    	 	st.write(data_q, data_p, data_pJ)

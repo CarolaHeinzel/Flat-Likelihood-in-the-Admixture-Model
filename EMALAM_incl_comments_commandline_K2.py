@@ -36,42 +36,20 @@ n_trials = 10 # Number of different initial values for the minimization function
 
 #%%
 def determine_p(data_p):
-    # Konvertiere die Spalten des DataFrames in Listen
     result_list = data_p[0].tolist()
     result_list1 = data_p[1].tolist()
-    
-    # Bestimme die Länge der Listen
     M = len(result_list)
+    s1 = 10**100
+    sM = -10**100
     
-    # Initialisiere große positive und negative Werte
-    s1 = 10 ** 100
-    sM = -10 ** 100
-    
-    for m in range(M):
-        # Überprüfe, ob die Werte unterschiedlich sind
-        if result_list[m] != result_list1[m]:
-            # Berechne temp_p und temp_p1
-            if result_list[m] < 1:
-                temp_p = (1 - result_list1[m]) / (1 - result_list[m])
-            else:
-                temp_p = s1  # Setze temp_p auf s1, falls der Fall nicht zutrifft
-            
-            # Berechne temp_p1, vermeide Division durch 0
-            if result_list[m] > 0:
-                temp_p1 = result_list1[m] / result_list[m]
-            else:
-                temp_p1 = s1  # Setze temp_p1 auf s1, falls der Fall nicht zutrifft
-            
-            # Bestimme die minimalen und maximalen Werte
-            temp_min = min(temp_p, temp_p1)
-            temp_max = max(temp_p, temp_p1)
-            
-            # Aktualisiere s1 und sM
-            if s1 > temp_min:
-                s1 = temp_min
-            if sM < temp_max:
-                sM = temp_max
-    
+    for m in range(M): # Every M and every p should be considered 
+        temp_p1 = result_list1[m]/result_list[m]
+        temp_min = temp_p1
+        temp_max = temp_p1
+        if(s1 > temp_min):
+            s1 = temp_min
+        if(sM < temp_max):
+            sM = temp_max
     return s1, sM
 
 # print(determine_p(data_p))
@@ -79,8 +57,7 @@ def determine_p(data_p):
 #%%
 
 # Calculation for K = 2
-
-def calc_p_q(data_p, data_q, data_type):
+def calc_p_q(pJ_all, data_q, name_q, name_p):
     '''
     
     Calculates the maximal and minimal estimated IAs with the formula.
@@ -90,10 +67,10 @@ def calc_p_q(data_p, data_q, data_type):
         Estimated Allele Frequencies of every marker for every population.
     data_1 : df
         Estimated IA of every Individual for every population.
-#    name_q : string
-#        Name of the output file for q.
-#    name_p : string
-#        Name of the output file for p.
+    name_q : string
+        Name of the output file for q.
+    name_p : string
+        Name of the output file for p.
 
     Returns
     -------
@@ -101,45 +78,35 @@ def calc_p_q(data_p, data_q, data_type):
         Vector b.
 
     '''
-
-
-    if(data_type == "STRUCTURE Output"):
-        max_value = data_q[5].max()
-        min_value = data_q[5].min()
-    else:
-        max_value = data_q[0].max()
-        min_value = data_q[0].min()    
-    s1, sM = determine_p(data_p)
+    max_value = data_q[0].max()
+    min_value = data_q[0].min()
+    s1, sM = determine_p(pJ_all)
 
     a_max = (s1-1)/(max_value/(1-max_value) + s1)
     b_max = 1 + a_max * (max_value/(1-max_value))
 
+
     a_min = 1/(1-min_value)/(sM + min_value/(1-min_value))
     b_min =  min_value/(1-min_value)*(a_min - 1)
-
-    res_p = []
-    res_q = []
-      
-    if(data_type ==  "STRUCTURE Output"):
-        q_max = data_q[5]*(1-a_max) + (1-data_q[5])*b_max
-        q_min = data_q[5]*(1-a_min) + (1-data_q[5])*b_min
-    else:
+    
+    N = len(data_q[0])
+    for i in range(N):
         q_max = data_q[0]*(1-a_max) + (1-data_q[0])*b_max
-        
-        q_min = data_q[0]*(1-a_min) + (1-data_q[0])*b_min        
-    p_max_1 = (data_p[0] - b_max*data_p[0] - a_max*data_p[1])/(1 - a_max - b_max)
-    p_min_1 = (data_p[0] - b_min*data_p[0] - a_min*data_p[1])/(1 - a_min - b_min)
-    p_max_2 = (data_p[1] - a_max*data_p[1] - b_max*data_p[0])/(1 - a_max - b_max)
-    p_min_2 = (data_p[1] - a_min*data_p[1] - b_min*data_p[0])/(1 - a_min - b_min)
-    result_qmax = pd.DataFrame([q_max.tolist(), (1-q_max).tolist()]).transpose()
-    result_qmin = pd.DataFrame([q_min.tolist(), (1-q_min).tolist()]).transpose()
-    result_pmax = pd.DataFrame([p_max_1.tolist(), p_max_2.tolist()]).transpose()
-    result_pmin = pd.DataFrame([p_min_1.tolist(), p_min_2.tolist()]).transpose()
-    res_p.append({"data" : result_pmin, "extension" : "min"})
-    res_p.append({"data" : result_pmax, "extension" : "max"})
-    res_q.append({"data" : result_qmin, "extension" : "min"})
-    res_q.append({"data" : result_qmax, "extension" : "max"})
-    return res_q, res_p
+        q_min = data_q[0]*(1-a_min) + (1-data_q[0])*b_min
+        p_max_1 = (data_p[0] - b_max*data_p[0] - a_max*data_p[1])/(1 - a_max - b_max)
+        p_min_1 = (data_p[0] - b_min*data_p[0] - a_min*data_p[1])/(1 - a_min - b_min)
+        p_max_2 = (data_p[1] - a_max*data_p[1] - b_max*data_p[0])/(1 - a_max - b_max)
+        p_min_2 = (data_p[1] - a_min*data_p[1] - b_min*data_p[0])/(1 - a_min - b_min)
+    result_qmax = [q_max.tolist(), (1-q_max).tolist()]
+    result_qmin = [q_min.tolist(), (1-q_min).tolist()]
+    result_pmax = [p_max_1.tolist(), p_max_2.tolist()]
+    result_pmin = [p_min_1.tolist(), p_min_2.tolist()]
+
+    save_values(result_qmax, name_q, "max")
+    save_values(result_pmax, name_p, "max")
+    save_values(result_qmin, name_q, "min")
+    save_values(result_pmin, name_p, "min")
+    return
 #%%
 # 2) Execute the functions
 def change_format(array):
