@@ -32,10 +32,8 @@ def correct_formatJ(data_p):
 simi = 0 # Do not take label switching into account (recommended)
 k_specific = 0
 n_trials = 10 # Number of different initial values for the minimization function
-# Names of the output files
 
 def main(data_q_input, data_p_input, pJ_input,pJ_all, data_q_output, data_p_output, poss, k_specific = None, indices_specific = None):
-    # Lese den Inhalt der Input-Dateien ein
     data_q = pd.read_csv(data_q_input, sep=' ', header=None)
     data_p = pd.read_csv(data_p_input, sep=' ', header=None)
     pJ_all = pd.read_csv(pJ_all, sep=' ', header=None)
@@ -43,15 +41,17 @@ def main(data_q_input, data_p_input, pJ_input,pJ_all, data_q_output, data_p_outp
         pJ = None
     else:
         pJ = pd.read_csv(pJ_input, sep=' ', header=None)
-    
-    # Bereinigen von data_p: Entferne Zeilen, die nur 1 enthalten
+    if(k_specific != None):
+        k_specific = pd.read_csv(k_specific, sep=' ', header=None)
+
+    if(indices_specific != None):
+        indices_specific = pd.read_csv(indices_specific, sep=' ', header=None).values.tolist()[0]
+    print(indices_specific)
     data_p = data_p[~(data_p == 1).all(axis=1)]
     
-    # Speichere die Ergebnisse in den angegebenen Ausgabedateien
     data_q.to_csv(data_q_output, sep=' ', header=False, index=False)
     data_p.to_csv(data_p_output, sep=' ', header=False, index=False)
     
-    # Erstelle die Liste der Dateinamen
     names = [data_q_output, data_p_output]
     
     return data_q, data_p, pJ,pJ_all, names, poss, k_specific, indices_specific
@@ -78,8 +78,6 @@ if __name__ == "__main__":
     # Rufe die main-Funktion auf und übergebe die Input-Dateien
  
     data_q, data_p, pJ, pJ_all, names, poss, k_specific, indices_specific = main(args.data_q_input, args.data_p_input, args.pJ_input,args.pJ_all, args.data_q_output, args.data_p_output, args.poss, args.k_specific, args.indices_specific)
-    
-    # Optionale Verarbeitung für pJ
     if pJ is not None:
         pJ = correct_formatJ(pJ)
     data_p = data_p[~(data_p == 1).all(axis=1)]
@@ -335,9 +333,11 @@ def objective_min(x, conse):
 def entropy(x, q_alle, indices_specific):
     q_hier = change_format(q_alle)
     S = create_S(len(q_alle), np.array(x))
-    N = len(q_alle[0])
+    if(indices_specific == None):
+        N = len(q_alle[0])
+        indices_specific = np.linspace(0, N-1, N)
     ent = 0
-    for i in range(N):
+    for i in indices_specific:
         p = np.dot(q_hier[i], S)
         b = all([x > 0.001 for x in p])
         if(b):
@@ -350,7 +350,9 @@ def entropy(x, q_alle, indices_specific):
 def entropy_pop_max(x, q_alle, k_specific, indices_specific):
     q_hier = change_format(q_alle)
     S = create_S(len(q_alle), np.array(x))
-    N = len(q_alle[0])
+    if(indices_specific == None):
+        N = len(q_alle[0])
+        indices_specific = np.linspace(0, N-1, N) 
     ent = 0
     for i in indices_specific:
         p = np.dot(q_hier[i], S)
@@ -363,7 +365,9 @@ def entropy_pop_max(x, q_alle, k_specific, indices_specific):
 def entropy_pop_min(x, q_alle, k_specific,indices_specific):
     q_hier = change_format(q_alle)
     S = create_S(len(q_alle), np.array(x))
-    N = len(q_alle[0])
+    if(indices_specific == None):
+        N = len(q_alle[0])
+        indices_specific = np.linspace(0, N-1, N) 
     ent = 0
     for i in indices_specific:
         p = np.dot(q_hier[i], S)
@@ -377,9 +381,11 @@ def entropy_max(x, q_alle, indices_specific):
     q_hier = change_format(q_alle)
     
     S = create_S(len(q_alle), np.array(x))
-    N = len(q_alle[0])
+    if(indices_specific == None):
+        N = len(q_alle[0])
+        indices_specific = np.linspace(0, N-1, N)
     ent = 0
-    for i in range(N):
+    for i in indices_specific:
         p = np.dot(q_hier[i], S)
         b = all([x > 0.001 for x in p])
         if(b):
@@ -904,6 +910,7 @@ def algo_final(q_vectors, p_alle,pJ_all, K, poss, simi, names, k_specific,indice
     None.
 
     '''
+
     if(K > 2 and poss != "P_min" and poss!= "P_max"):
         temp = repeat_algo(q_vectors, p_alle, poss, simi, k_specific,indices_specific, pJ, n_trials)
         repeat_create_daten(q_alle, p_alle, K, temp, poss, names)
