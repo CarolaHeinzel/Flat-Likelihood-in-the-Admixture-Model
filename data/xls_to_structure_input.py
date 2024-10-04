@@ -1,9 +1,14 @@
 import pandas as pd
 
+# Write some information about the samples
+df_full = pd.read_excel("mmc5.xlsx", header = 5, usecols="A:DE")
+samples_info = df_full.iloc[5:, 0:4]
+samples_info.to_csv('sample_information.csv', header=False, index = False)
+
+
 filename = "structure_input.txt"
 
 #%%
-df_full = pd.read_excel("mmc5.xlsx", header = 5, usecols="A:DE")
 df = df_full.iloc[5:, 5:]
 df.insert(loc=0, column = "ID", value = df_full.iloc[5:, 3].to_list())
 df.insert(loc=1, column = "POP", value = df_full.iloc[5:, 1].to_list())
@@ -12,13 +17,11 @@ df.set_index("ID", inplace=True)
 df.dropna(how='all', axis=1, inplace=True)
 
 # Extract only European and Middle East samples
-df = df[[("EURO" in i or "MIDDLE" in i) for i in df["POP"]]]
+# df = df[[("EURO" in i or "MIDDLE" in i) for i in df["POP"]]]
 
 pops = list(set(df["POP"]))
 df["POP"] = [pops.index(i) for i in df["POP"]]
-
 locs = list(set(df["LOC"]))
-print("Locations are \n" + "\n".join(locs))
 df["LOC"] = [locs.index(i) for i in df["LOC"]]
 
 
@@ -50,5 +53,6 @@ with open(filename, "w") as f:
         first_row, second_row = get_data(data)
         f.writelines('\t'.join([index, str(row["POP"]), str(row["LOC"])] + first_row) + '\n')
         f.writelines('\t'.join([index, str(row["POP"]), str(row["LOC"])] + second_row) + '\n')
-        
+
+print("The following information is necessary for the mainparms structure file:")        
 print(df.shape)

@@ -132,7 +132,7 @@ def correct_format(data_q, data_p):
 def create_b(q_vectors):
     '''
     
-    Calculates the vector b in Ax \leq b.
+    Calculates the vector b in Ax \\leq b.
     Parameters
     ----------
     q_vectors : List
@@ -238,7 +238,7 @@ def create_cons(A, poss, index_individual, K):
 def create_A(q_alle):
 
     '''
-    Create Matrix A for Linear Optimization, i.e. for the Ax \leq b
+    Create Matrix A for Linear Optimization, i.e. for the Ax \\leq b
 
     Parameters
     ----------
@@ -443,21 +443,21 @@ def constraints_all(A, b_vek, K, p_alle, q_alle, simi, pJ):
             #{'type': 'ineq', 'fun': lambda x: constraint_j(x, pJ, K)}
             ]
     elif(type(pJ) != np.ndarray):        
-    	if(pJ == 0 and simi == 1):
+        if(pJ == 0 and simi == 1):
 
-        	constr = [
+            constr = [
+        	    {'type': 'ineq', 'fun': lambda x: constraint1(x, A, b_vek)},
+                {'type': 'ineq', 'fun': lambda x: constraint2(x, p_alle, K)},
+                {'type': 'ineq', 'fun': lambda x: constraint3(x, p_alle, K)},
+                {'type': 'ineq', 'fun': lambda x: constraint4(x, q_alle, p_alle, K)}]
+
+        elif(pJ == 0 and simi == 0):
+            constr = [
         	    {'type': 'ineq', 'fun': lambda x: constraint1(x, A, b_vek)},
         	    {'type': 'ineq', 'fun': lambda x: constraint2(x, p_alle, K)},
         	    {'type': 'ineq', 'fun': lambda x: constraint3(x, p_alle, K)},
-        	    {'type': 'ineq', 'fun': lambda x: constraint4(x, q_alle, p_alle, K)}]
-                        
-    	elif(pJ == 0 and simi == 0):
-        	constr = [
-        	    {'type': 'ineq', 'fun': lambda x: constraint1(x, A, b_vek)},
-        	    {'type': 'ineq', 'fun': lambda x: constraint2(x, p_alle, K)},
-        	    {'type': 'ineq', 'fun': lambda x: constraint3(x, p_alle, K)},
-        	    ]
-                        
+                ]
+
     return constr
 
 
@@ -493,9 +493,9 @@ def algorithm_max(cons, A, b_vek,p_alle,q_alle, K, simi, poss, k_specific, pJ, n
     cons : List
         Vecotor that should be maximized.
     A : List
-        Matrix for Ax \leq b.
+        Matrix for Ax \\leq b.
     b_vek : List
-        Vecotr for Ax \leq b.
+        Vecotr for Ax \\leq b.
     p_alle : List
         All allele frequencies in the STRUCTURE output. Format: 
         [[Allele Frequecies Population 1, Marker 1,...,M], ....,
@@ -518,7 +518,7 @@ def algorithm_max(cons, A, b_vek,p_alle,q_alle, K, simi, poss, k_specific, pJ, n
     -------
     List
         Parameters that maximize cons and make sure that the constraint 
-        P_K^{-1}p \in [0,1] is fulfilled.
+        P_K^{-1}p \\in [0,1] is fulfilled.
 
     '''
 
@@ -545,9 +545,9 @@ def algorithm_min(cons, A, b_vek,p_alle,q_alle, K, simi, poss, k_specific, pJ, n
     cons : List
         Vecotor that should be maximized.
     A : List
-        Matrix for Ax \leq b.
+        Matrix for Ax \\leq b.
     b_vek : List
-        Vecotr for Ax \leq b.
+        Vecotr for Ax \\leq b.
     p_alle : List
         All allele frequencies in the STRUCTURE output. Format: 
         [[Allele Frequecies Population 1, Marker 1,...,M], ....,
@@ -570,7 +570,7 @@ def algorithm_min(cons, A, b_vek,p_alle,q_alle, K, simi, poss, k_specific, pJ, n
     -------
     List
         Parameters that maximize cons and make sure that the constraint 
-        P_K^{-1}p \in [0,1] is fulfilled.
+        P_K^{-1}p \\in [0,1] is fulfilled.
 
     '''
     result = initial(n_trials, cons, A, b_vek,p_alle,q_alle, K, simi, poss, k_specific, pJ, objective_min)
@@ -849,7 +849,7 @@ def algo_final(data_q, data_p, K, poss, simi, k_specific,pJ, n_trials, index_ind
     K: Int
         number of populations
     J_m: List
-        Number of alleles at marker m for all m = 1, \ldots, M
+        Number of alleles at marker m for all m = 1, \\ldots, M
     poss: String
         Choice of the Target function
     simi: Int
@@ -919,7 +919,7 @@ if __name__ == "__main__":
     data_q_out, data_p_out = algo_final(data_q, data_p, K, args.poss, simi, k_specific, pJ, n_trials)
 
     for d in data_q_out:
-    	save_values(d["data"], f"{args.data_q_input}_{d['extension']}")
+        save_values(d["data"], f"{args.data_q_input}_{d['extension']}")
     for d in data_q_out:
     	save_values(d["data"], f"{args.data_p_input}_{d['extension']}")
 

@@ -14,7 +14,6 @@ import argparse
 
 #data_q = pd.read_csv(file_path_q, sep=' ', header=None)
 
-
 def correct_formatJ(data_p):
     data_p = data_p.values.tolist()
     K = len(data_p[0]) # Number of populations

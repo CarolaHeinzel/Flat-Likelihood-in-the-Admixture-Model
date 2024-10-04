@@ -36,7 +36,7 @@ def read_table_data(file_path, K):
             values = [val for val in modified_text.split() if val != ""]
             numeric_values = np.array(values, dtype=float)
             # Sum corresponding values for the two K sections
-            
+
             res1 = numeric_values[:K] + numeric_values[K:2*K]
             if(sum(res1) < 2):
             # Add the results to the res array

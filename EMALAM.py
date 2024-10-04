@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import re
 
 import EMALAM_incl_comments_commandline_K2 as em
-import Extrahieren_p_q_python as ex
+import get_p_q_from_structure_file as ex
 
 st.set_page_config(page_title="EMALAM", page_icon=None, layout="wide", initial_sidebar_state="auto", menu_items=None)
 
@@ -17,31 +17,32 @@ if "uploaded_q_file" not in st.session_state:
     st.session_state.uploaded_q_file = None
 if "uploaded_p_file" not in st.session_state:
     st.session_state.uploaded_p_file = None
-if "poss" not in st.session_state:
-    st.session_state.poss = "P4" # Initial Value
 if "uploaded_pJ_file" not in st.session_state:
     st.session_state.uploaded_pJ_file = None
+if "poss" not in st.session_state:
+    st.session_state.poss = "P4" # Initial Value
 if "data_uploaded" not in st.session_state:
     st.session_state.data_uploaded = None
 
-def load_default_file():
-    default_file_path = 'Example_Output_STRUCTURE'  
-    with open(default_file_path, 'rb') as f:
+default_p_path = 'Example_Input/p_all_K2'
+default_q_path = 'Example_Input/q_K2'
+default_pJ_path = 'Example_Input/pJ_K2'
+default_STRUCTURE_path = 'Example_Input/output_structure_f'
+
+def load_STRUCTURE_file(path = default_STRUCTURE_path):
+    with open(path, 'rb') as f:
         return f.readlines()
 
-default_file_path_q = 'q_CEU_IBS_TSI_K2.txt'
-default_file_path_p = 'p_CEU_IBS_TSI_K2' 
-default_file_pJ = 0 
-
-def load_default_file_notSTRUCTURE(default_file_path_q, default_file_path_p, default_file_pJ):
-    data_p = pd.read_csv(default_file_path_p, delimiter=" ", header=None)
-    data_q = pd.read_csv(default_file_path_q, delimiter=" ", header=None)
-    if default_file_pJ:
-        data_J = pd.read_csv(default_file_pJ, delimiter=" ", header=None)
+def load_file_notSTRUCTURE(path_q = default_p_path, path_p = default_q_path, path_pJ = default_pJ_path):
+    data_p = pd.read_csv(path_p, delimiter=" ", header=None)
+    data_q = pd.read_csv(path_q, delimiter=" ", header=None)
+    if path_pJ:
+        data_J = pd.read_csv(path_pJ, delimiter=" ", header=None)
     else:
          data_J = 0     
     return data_q, data_p, data_J
 
+# Where is this used? Can be made more efficient
 def correct_format(data_q):
     data_q = data_q.values.tolist()
     K = len(data_q[0])  # Number of populations
@@ -51,22 +52,11 @@ def correct_format(data_q):
         q_alle.append(q1_vec)
     return q_alle
     
-# Determine K for the STRUCTURE File    
-def extract_population_count(file1):
-    output_text = ''.join([line.decode('utf-8') for line in file1])
-    match = re.search(r"(\d+)\s+populations assumed", output_text)
-
-    if match:
-        return int(match.group(1))  
-    else:
-        return None 
 
 st.header("EMALAM")
 st.write("See xxx for a reference what this webpage is about.")
-st.write("You can use an output file of STRUCTURE, which will then be sorted into $q$- and $p$-matrices.")
-st.write("For the other case, you must upload two files (for bi-allelic loci) or three files (of some alleles are multi-allelic).:\n  * The $q$-file of individual admixtures;\n  * The $p$-file of allele frequencies in all populations;\n  * Some J file??")
 
-default_options = ["Example [STRUCTURE output data](github.com)", "Example [other data](github.com)", "Upload own data"]
+default_options = ["Example [STRUCTURE output data](github.com)", "Example [p- and q-matrizes](github.com)", "Upload own data"]
 default = st.radio(
     "Which file(s) should be used?",
     options = default_options,
@@ -75,6 +65,13 @@ default = st.radio(
 
 if default == default_options[0]:
     use_structure_file = True
+    with open(default_STRUCTURE_path, 'rb') as f:
+        return f.readlines()
+
+    
+    K = extract_population_count(uploaded_file)
+    data_pJ, data_p, marker_names, p_all = ex.read_table_data(uploaded_file, K)
+
     ## read default files
 elif default == default_options[1]:
     use_other_file = True
@@ -111,6 +108,8 @@ elif default == default_options[2]:
     #if individual_names:
     #	st.session_state.individual_names_file = st.file_uploader("Upload Individual Names file")
 
+st.write("You can use an output file of STRUCTURE, which will then be sorted into $q$- and $p$-matrices.")
+st.write("For the other case, you must upload two files (for bi-allelic loci) or three files (of some alleles are multi-allelic).:\n  * The $q$-file of individual admixtures;\n  * The $p$-file of allele frequencies in all populations;\n  * Some J file??")
 
 
 if st.session_state.data_uploaded == True:
@@ -145,7 +144,7 @@ if data_type != data_type_options[0]:
         st.write(data_p)
         st.write(data_pJ)
     else:
-        data_q, data_p, data_pJ = load_default_file_notSTRUCTURE()
+        data_q, data_p, data_pJ = load_file_notSTRUCTURE()
         M = data_p.shape[0]
         K = data_p.shape[1]
         N = data_q.shape[0]
@@ -158,35 +157,35 @@ if data_type != data_type_options[0]:
     		
 else:
 
-	if st.session_state.uploaded_q_file is not None:
-	
-	  	uploaded_file = st.session_state.uploaded_q_file.readlines()
-	  	K = extract_population_count(uploaded_file)
+    if st.session_state.uploaded_q_file is not None:
 
-	  	data_pJ, data_p, marker_names, p_all = ex.read_table_data(uploaded_file, K)
-	  	data_q, individual_names = ex.extract_q(uploaded_file, K)
-	  	print(p_all)
-	  	M = data_p.shape[0]  
-	  	N = data_q.shape[0]
-	  	st.write(data_q, data_p, data_pJ, p_all)
-	  	print(type(data_pJ))
-	  	if(type(data_pJ) != np.ndarray):
-	  		if(data_pJ == None):
-	  			data_pJ = 0
-	else:
-   	 	uploaded_file = load_default_file()
-   	 	K = extract_population_count(uploaded_file)
-   	 	st.write(K)
-   	 	data_pJ, data_p, marker_names, p_all = ex.read_table_data(uploaded_file, K)
-   	 	print(p_all)
-   	 	data_q, individual_names = ex.extract_q(uploaded_file, K)
+        uploaded_file = st.session_state.uploaded_q_file.readlines()
+        K = extract_population_count(uploaded_file)
 
-   	 	M= data_p.shape[0] 
-   	 	N = data_q.shape[0]
-   	 	st.write(data_q, data_p, data_pJ, p_all)
-   	 	if(type(data_pJ) != np.ndarray):
-   	 		if(data_pJ == None):
-   	 			data_pJ = 0
+        data_pJ, data_p, marker_names, p_all = ex.read_table_data(uploaded_file, K)
+        data_q, individual_names = ex.extract_q(uploaded_file, K)
+        print(p_all)
+        M = data_p.shape[0]  
+        N = data_q.shape[0]
+        st.write(data_q, data_p, data_pJ, p_all)
+        print(type(data_pJ))
+        if(type(data_pJ) != np.ndarray):
+            if(data_pJ == None):
+                data_pJ = 0
+    else:
+        uploaded_file = load_STRUCTURE_file()
+        K = extract_population_count(uploaded_file)
+        st.write(K)
+        data_pJ, data_p, marker_names, p_all = ex.read_table_data(uploaded_file, K)
+        print(p_all)
+        data_q, individual_names = ex.extract_q(uploaded_file, K)
+
+        M= data_p.shape[0] 
+        N = data_q.shape[0]
+        st.write(data_q, data_p, data_pJ, p_all)
+        if(type(data_pJ) != np.ndarray):
+            if(data_pJ == None):
+                data_pJ = 0
 
 selected_individual = 0   
 if poss == "P1":
@@ -201,16 +200,16 @@ if submit:
     with st.spinner('The computer is calculating...'):
 
 
-	    data_p = data_p[~(data_p == 1).all(axis=1)]
-	    pJ = data_pJ
-	    simi = 0
-	    k_specific = 0
-	    n_trials = 10
+        data_p = data_p[~(data_p == 1).all(axis=1)]
+        pJ = data_pJ
+        simi = 0
+        k_specific = 0
+        n_trials = 10
 
 
 
-	    data_p = pd.DataFrame(data_p)
-	    data_q_out, data_p_out = em.algo_final(data_q, data_p, K, poss, simi, k_specific, data_pJ, n_trials, selected_individual, data_type)
+        data_p = pd.DataFrame(data_p)
+        data_q_out, data_p_out = em.algo_final(data_q, data_p, K, poss, simi, k_specific, data_pJ, n_trials, selected_individual, data_type)
 
     with st.expander('Input Data'):
         cols = st.columns([K] + [1 for _ in range(K)])
@@ -309,7 +308,7 @@ if submit:
                     for j in range(K):  
                         ax.bar(range(N), q_alle_1[:, j], bottom=bottom, color=colors[j], label=f'Population {j + 1}')
                         for l in range(len(bottom)):
-                        	bottom[l] += q_alle_1[l, j]  
+                            bottom[l] += q_alle_1[l, j]  
                     ax.set_xticks(range(len(individual_names)))  
                     ax.set_xticklabels(individual_names, rotation=90, ha='right') 
 
@@ -367,8 +366,8 @@ if submit:
                     bar_width = 0.15
 
                     for j in range(K):  
-                    	x_positions = np.arange(M) + j * bar_width  # Position für Population j
-                    	ax.bar(x_positions, q_alle_1[:, j], width=bar_width, color=colors[j], label=f'Population {j + 1}')
+                        x_positions = np.arange(M) + j * bar_width  # Position für Population j
+                        ax.bar(x_positions, q_alle_1[:, j], width=bar_width, color=colors[j], label=f'Population {j + 1}')
 			    
                     ax.set_xticks([])  
 
