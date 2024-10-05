@@ -1,12 +1,11 @@
 import streamlit as st
-import pandas as pd
-import numpy as np
 import plotly.express as px
 import matplotlib.pyplot as plt
-import re
 
-import EMALAM_incl_comments_commandline_K2 as em
-import get_p_q_from_structure_file as ex
+import tools 
+
+default_structure_path = 'Example_Input/output_structure_K3_f'
+n = 10 # number of trials for optimization
 
 st.set_page_config(page_title="EMALAM", page_icon=None, layout="wide", initial_sidebar_state="auto", menu_items=None)
 
@@ -23,40 +22,36 @@ if "poss" not in st.session_state:
     st.session_state.poss = "P4" # Initial Value
 if "data_uploaded" not in st.session_state:
     st.session_state.data_uploaded = None
+if "hatp" not in st.session_state:
+    st.session_state.hatp = None
+if "hatq" not in st.session_state:
+    st.session_state.hatq = None
+if "ind_ids" not in st.session_state:
+    st.session_state.ind_ids = None
+if "popl" not in st.session_state:
+    st.session_state.popl = None
+if "inds" not in st.session_state:
+    st.session_state.inds = None
+if "ids" not in st.session_state:
+    st.session_state.ids = None
+
+lines = None
 
 default_p_path = 'Example_Input/p_all_K2'
 default_q_path = 'Example_Input/q_K2'
 default_pJ_path = 'Example_Input/pJ_K2'
 default_STRUCTURE_path = 'Example_Input/output_structure_f'
 
-def load_STRUCTURE_file(path = default_STRUCTURE_path):
-    with open(path, 'rb') as f:
-        return f.readlines()
-
-def load_file_notSTRUCTURE(path_q = default_p_path, path_p = default_q_path, path_pJ = default_pJ_path):
-    data_p = pd.read_csv(path_p, delimiter=" ", header=None)
-    data_q = pd.read_csv(path_q, delimiter=" ", header=None)
-    if path_pJ:
-        data_J = pd.read_csv(path_pJ, delimiter=" ", header=None)
-    else:
-         data_J = 0     
-    return data_q, data_p, data_J
-
-# Where is this used? Can be made more efficient
-def correct_format(data_q):
-    data_q = data_q.values.tolist()
-    K = len(data_q[0])  # Number of populations
-    q_alle = []
-    for i in range(K):
-        q1_vec = [float(subliste[i]) for subliste in data_q]
-        q_alle.append(q1_vec)
-    return q_alle
-    
-
 st.header("EMALAM")
-st.write("See xxx for a reference what this webpage is about.")
+st.write("See xxx biorxiv for a reference what this webpage is about.")
 
-default_options = ["Example [STRUCTURE output data](github.com)", "Example [p- and q-matrizes](github.com)", "Upload own data"]
+################################
+## Choose which input is used ##
+################################
+
+# At the end of this section, we have hatq and hatp
+
+default_options = ["Example [STRUCTURE output data](github.com)", "Example [p- and q-matrizes](github.com)", "Upload data"]
 default = st.radio(
     "Which file(s) should be used?",
     options = default_options,
@@ -65,326 +60,112 @@ default = st.radio(
 
 if default == default_options[0]:
     use_structure_file = True
-    with open(default_STRUCTURE_path, 'rb') as f:
-        return f.readlines()
-
-    
-    K = extract_population_count(uploaded_file)
-    data_pJ, data_p, marker_names, p_all = ex.read_table_data(uploaded_file, K)
-
-    ## read default files
-elif default == default_options[1]:
-    use_other_file = True
-    ## read default files    
-elif default == default_options[2]:
-    # Select input data type
+    lines = tools.load_structure_file(default_structure_path)
+if default == default_options[1]:
+    use_structure_file = False
+    st.write("Sorry, no implementation yet!")
+if default == default_options[2]:
     data_type_options = ["STRUCTURE Output", "Other"]
     data_type = st.selectbox(
         "Select the type of input data:",
         options=data_type_options,  # Add other options as needed
         index=0  # Set the default selected option to "STRUCTURE"
     )
-    use_structure_file = (data_type == data_type_options[0])
-    use_other_file = (data_type == data_type_options[1])
     
     # File uploaders based on input type
     if data_type == data_type_options[0]:
         use_structure_file = True
         st.session_state.uploaded_structure_file = st.file_uploader("STRUCTURE output file")
+        if st.session_state.uploaded_structure_file:
+            lines = st.session_state.uploaded_structure_file.readlines()
+        
     else:
-        use_other_file = True
+        use_structure_file = False
         col1, col2, col3 = st.columns([1,1,1])
         st.session_state.uploaded_q_file = col1.file_uploader("STRUCTURE output file for individual ancestries (q)")
         st.session_state.uploaded_p_file = col2.file_uploader("STRUCTURE output file for allele frequencies (p)")
         st.session_state.uploaded_pJ_file = col3.file_uploader("STRUCTURE output file for allele frequencies (p) for J >= 3")
+        st.write("Sorry, no implementation yet!")
+        lines = None
+    
+if lines is not None:
+    hatq_df = tools.get_q(lines)
+    st.session_state.ind_ids = hatq_df.keys()
+    st.session_state.hatq = tools.to_df(hatq_df)    
+    hatp_df = tools.get_p(lines)
+    st.session_state.hatp = tools.to_df(hatp_df)
 
 
+############################
+## Choose target function ##
+############################
 
-    #markernames = st.checkbox("Markernames", value=False)
-    #individual_names = st.checkbox("Individual names", value=False)
-    #if markernames:
-    #	st.session_state.markernames_file = st.file_uploader("Upload Markernames file")
+if lines is not None:
+    st.write("### Selection of target function for optimization")
+    st.write("What should be done?")
+    
+    target_options = [
+        "Minimize/Maximize entropy", 
+        "Minimize/Maximize contribution from population i"]
 
-    #if individual_names:
-    #	st.session_state.individual_names_file = st.file_uploader("Upload Individual Names file")
-
-st.write("You can use an output file of STRUCTURE, which will then be sorted into $q$- and $p$-matrices.")
-st.write("For the other case, you must upload two files (for bi-allelic loci) or three files (of some alleles are multi-allelic).:\n  * The $q$-file of individual admixtures;\n  * The $p$-file of allele frequencies in all populations;\n  * Some J file??")
-
-
-if st.session_state.data_uploaded == True:
-    # Selectbox for choosing the function, linked to session state 'case'
-    case_options = ["(I) Minimize/Maximize average contribution from population i", "(II) Minimize/Maximize average entropy"]
-    # Add other options as needed
-
-    case = st.selectbox(
-        "Function which is optimized:",
-        options=case_options, 
-        index=0,  # Set the default selected option to "entropy"
+    target = st.selectbox(
+        "Select target function", 
+        options=target_options,  # Add other options as needed
+        index=0,  # Set the default selected option to "minimize entropy"
         help = "Maximal entropy favours admixed individuals, minimal entropy favours non-admixed individuals."
     )
-
-
-if data_type != data_type_options[0]:
-    if st.session_state.uploaded_p_file is not None:
-        data_p = pd.read_csv(st.session_state.uploaded_p_file, delimiter=" ", header=None)
-        M = data_p.shape[0]
-        K = data_p.shape[1]
-        m
-
-    if st.session_state.uploaded_pJ_file is not None:
-        data_pJ = pd.read_csv(st.session_state.uploaded_pJ_file, delimiter=" ", header=None)
-        K = data_pJ.shape[1]
-
-    if st.session_state.uploaded_q_file is not None:
-        data_q = pd.read_csv(st.session_state.uploaded_q_file, delimiter=" ", header=None)
-        N = data_q.shape[0]
-        individual_names = np.linspace(1, N, N)
-        st.write(data_q)
-        st.write(data_p)
-        st.write(data_pJ)
-    else:
-        data_q, data_p, data_pJ = load_file_notSTRUCTURE()
-        M = data_p.shape[0]
-        K = data_p.shape[1]
-        N = data_q.shape[0]
-        st.write(data_q)
-        st.write(data_p)
-        st.write(data_pJ)
-        individual_names = np.linspace(1, N, N) 
-        marker_names = np.linspace(1, M, M)
-
-    		
-else:
-
-    if st.session_state.uploaded_q_file is not None:
-
-        uploaded_file = st.session_state.uploaded_q_file.readlines()
-        K = extract_population_count(uploaded_file)
-
-        data_pJ, data_p, marker_names, p_all = ex.read_table_data(uploaded_file, K)
-        data_q, individual_names = ex.extract_q(uploaded_file, K)
-        print(p_all)
-        M = data_p.shape[0]  
-        N = data_q.shape[0]
-        st.write(data_q, data_p, data_pJ, p_all)
-        print(type(data_pJ))
-        if(type(data_pJ) != np.ndarray):
-            if(data_pJ == None):
-                data_pJ = 0
-    else:
-        uploaded_file = load_STRUCTURE_file()
-        K = extract_population_count(uploaded_file)
-        st.write(K)
-        data_pJ, data_p, marker_names, p_all = ex.read_table_data(uploaded_file, K)
-        print(p_all)
-        data_q, individual_names = ex.extract_q(uploaded_file, K)
-
-        M= data_p.shape[0] 
-        N = data_q.shape[0]
-        st.write(data_q, data_p, data_pJ, p_all)
-        if(type(data_pJ) != np.ndarray):
-            if(data_pJ == None):
-                data_pJ = 0
-
-selected_individual = 0   
-if poss == "P1":
-    individual_options = range(0, N) 
-    selected_individual = st.selectbox("Which individual should be considered?", individual_options)
-if poss == "P4" or poss == "P5":
-    individual_options = range(0, K) 
-    k_specific = st.selectbox("Which population should be considered?", individual_options)
-submit = st.button("Submit")
-
-if submit:
-    with st.spinner('The computer is calculating...'):
-
-
-        data_p = data_p[~(data_p == 1).all(axis=1)]
-        pJ = data_pJ
-        simi = 0
-        k_specific = 0
-        n_trials = 10
-
-
-
-        data_p = pd.DataFrame(data_p)
-        data_q_out, data_p_out = em.algo_final(data_q, data_p, K, poss, simi, k_specific, data_pJ, n_trials, selected_individual, data_type)
-
-    with st.expander('Input Data'):
-        cols = st.columns([K] + [1 for _ in range(K)])
-        with cols[0]:
-            st.subheader("Data q")
-            data_q = data_q
-            colors = plt.cm.tab10(np.linspace(0, 1, data_q.shape[1]))
-
-            q_alle = correct_format(data_q)
-            q_alle_1 = np.transpose(q_alle)
-
-            fig, ax = plt.subplots(figsize=(20, 8))
-            bottom = np.zeros(q_alle_1.shape[0])
-
-            for j in range(q_alle_1.shape[1]):
-                ax.bar(range(q_alle_1.shape[0]), q_alle_1[:, j], bottom=bottom, color=colors[j], label=f'Population {j + 1}')
-                bottom += q_alle_1[:, j]
-
-            ax.set_xticks(range(len(individual_names)))
-            #print(individual_names)
-
-            ax.set_xticklabels(individual_names, rotation=90, ha='right')
-            ax.set_xlabel('Individuals')
-            ax.set_ylabel('Estimated IAs')
-            ax.set_ylim(0, 1)
-            ax.legend(title='Populations')
-
-            st.pyplot(fig)
-        with cols[1]:
-            st.subheader("Data p")
-            data_q = data_p
-            colors = plt.cm.tab10(np.linspace(0, 1, data_q.shape[1]))
-
-            q_alle = correct_format(data_q)
-            q_alle_1 = np.transpose(q_alle)
-
-            fig, ax = plt.subplots(figsize=(20, 8))
-            bottom = np.zeros(q_alle_1.shape[0])
-
-            for j in range(q_alle_1.shape[1]):
-                ax.bar(range(q_alle_1.shape[0]), q_alle_1[:, j], bottom=bottom, color=colors[j], label=f'Population {j + 1}')
-                bottom += q_alle_1[:, j]
-
-            ax.set_xticks(range(len(marker_names)))
-            ax.set_xlabel('Markers')
-            ax.set_ylabel('Estimated Allele Frequencies')
-            ax.set_ylim(0, K)
-            ax.legend(title='Populations')
-
-            st.pyplot(fig)
-
-    # Individuelle Admixture (q) darstellen
-    with st.expander('Individual Admixture (q)'):
-        cols = st.columns(len(data_q_out))
-
-        for i, d in enumerate(data_q_out):
-            st.write(data_q_out)
+    col1, col2 = st.columns([1,1])
+    with col1:
+        st.session_state.ids = st.multiselect(
+            "Average the target function on the following individuals",
+            options = st.session_state.ind_ids, placeholder = "Please choose one or more individuals.")
+        st.session_state.inds = [id in st.session_state.ids for id in st.session_state.ind_ids]
         
-            with cols[i]:
-                if K == 2 and poss != "P2" and poss != "P3":  
-                    #st.write(d["data"])
-                    data_q = d["data"]
-                    colors = plt.cm.tab10(np.linspace(0, 1, data_q.shape[1]))
-
-                    q_alle = correct_format(data_q)  # Korrekte Formatierung der Daten
-                    q_alle_1 = np.transpose(q_alle) 
-
-                    fig, ax = plt.subplots(figsize=(20, 8))  # Breite und Höhe nach Bedarf anpassen
-                    bottom = np.zeros(q_alle_1.shape[0])  # Basislinie für das gestapelte Diagramm
-
-                    for j in range(q_alle_1.shape[1]):  # Über jede Population iterieren
-                        ax.bar(range(q_alle_1.shape[0]), q_alle_1[:, j], bottom=bottom, color=colors[j], label=f'Population {j + 1}')
-                        bottom += q_alle_1[:, j]  # Aktualisieren der Basislinie
-
-                    ax.set_xticks(range(len(individual_names)))  # Setze die Positionen der x-Achsen-Ticks
-                    ax.set_xticklabels(individual_names, rotation=90, ha='right')  # Setze die benutzerdefinierten Labels und drehe sie
-
-                    ax.set_xlabel('Individuals')
-                    ax.set_ylabel('Estimated IAs')
-                    ax.set_ylim(0, 1)
-                    ax.legend(title='Populationen')  
-
-                    st.pyplot(fig)
-                else:  
-                
-                    st.write(data_q_out[0])
-                    data_q = data_q_out[0]
-                    colors = plt.cm.tab10(np.linspace(0, 1, K))
-
-                    q_alle = data_q
-                    q_alle_1 = np.transpose(q_alle) 
-		     
-                    fig, ax = plt.subplots(figsize=(20, 8))  
-                    bottom = np.zeros(N)  
-
-                    for j in range(K):  
-                        ax.bar(range(N), q_alle_1[:, j], bottom=bottom, color=colors[j], label=f'Population {j + 1}')
-                        for l in range(len(bottom)):
-                            bottom[l] += q_alle_1[l, j]  
-                    ax.set_xticks(range(len(individual_names)))  
-                    ax.set_xticklabels(individual_names, rotation=90, ha='right') 
-
-                    ax.set_xlabel('Individuals')
-                    ax.set_ylabel('Estimated IAs')
-                    ax.set_ylim(0, 1)
-                    ax.legend(title='Populations')  
-
-                    st.pyplot(fig)
-
-    with st.expander(f'Allele Frequencies (p) '):
-        cols = st.columns([1 for i in data_p_out])        
-        i = 0
-        st.write(data_p_out)
-
-        for d in data_p_out:
-            with cols[i]:
-
-                if(K == 2 and poss != "P2" and poss != "P3"):
-                
-
-                    data_q = d["data"]
-                    colors = plt.cm.tab10(np.linspace(0, 1, data_q.shape[1]))
-
-                    q_alle = correct_format(data_q)  
-                    q_alle_1 = np.transpose(q_alle) 
-
-                    fig, ax = plt.subplots(figsize=(20, 8))  
-                    bottom = np.zeros(q_alle_1.shape[0])  
-		    
-                    for j in range(q_alle_1.shape[1]): 
-                        ax.bar(range(q_alle_1.shape[0]), q_alle_1[:, j], bottom=bottom, color=colors[j], label=f'Population {j + 1}')
-                        bottom += q_alle_1[:, j]  
-
-                    #ax.set_xticks(range(len(marker_names)))  
-                    #ax.set_xticklabels(marker_names, rotation=90, ha='right')  
-
-                    ax.set_xlabel('Markers')
-                    ax.set_ylabel('Estimated Allele Frequencies')
-                    ax.set_ylim(0, K)
-                    ax.legend(title='Populations')  
-
-                    st.pyplot(fig)                
-                else:  
-                
-                    st.write(data_p_out[0])
-                    data_q = data_p_out[0]
-                    colors = plt.cm.tab10(np.linspace(0, 1, K))
-
-                    q_alle = data_q
-                    q_alle_1 = np.transpose(q_alle) 
-		     
-                    fig, ax = plt.subplots(figsize=(20, 8))  
-                    bottom = np.zeros(M)  
-                    bar_width = 0.15
-
-                    for j in range(K):  
-                        x_positions = np.arange(M) + j * bar_width  # Position für Population j
-                        ax.bar(x_positions, q_alle_1[:, j], width=bar_width, color=colors[j], label=f'Population {j + 1}')
-			    
-                    ax.set_xticks([])  
-
-                    ax.set_xlabel('Markers')
-                    ax.set_ylabel('Estimated Allele Frequencies')
-                    ax.set_ylim(0, 1)
-                    ax.legend(title='Populations')  
-
-                    st.pyplot(fig)
+    with col2:
+        if target == target_options[1]:
+            pop_options = range(st.session_state.hatq.shape[1])
+            st.session_state.popl = st.selectbox("...for which population i", 
+                               options = pop_options,
+                               index = 0,
+                               help = "i is the column number in the structure output file, starting with 0")
 
 
+###################
+## Run optimizer ##    
+###################
 
-                i = i+1
-    if (data_type == "STRUCTURE Output"):
-
-    	with st.expander(f'Marker Names and Individual Names '):
-
-                st.write(marker_names, individual_names)
+if lines is not None:
+    if st.session_state.hatq is not None and st.session_state.hatq is not None and any(st.session_state.inds) == True and (target == target_options[0] or st.session_state.popl is not None):
+        submit = st.button("Submit")
+        if submit:
+            with st.spinner('The computer is calculating...'):
+                if target == target_options[0]:
+                    fun = (lambda x : tools.mean_entropy(x, st.session_state.hatq, st.session_state.inds))
+                    q_min = tools.find_q(fun, st.session_state.hatq, st.session_state.hatp, st.session_state.inds, n)
+                    fun = (lambda x : -tools.mean_entropy(x, st.session_state.hatq, st.session_state.inds))
+                    q_max = tools.find_q(fun, st.session_state.hatq, st.session_state.hatp, st.session_state.inds, n)
+                else:
+                    fun = (lambda x : tools.mean_size(x, st.session_state.hatq, st.session_state.popl))
+                    q_min = tools.find_q(fun, st.session_state.hatq, st.session_state.hatp, st.session_state.inds, n)
+                    fun = (lambda x : -tools.mean_size(x, st.session_state.hatq, st.session_state.popl))
+                    q_max = tools.find_q(fun, st.session_state.hatq, st.session_state.hatp, st.session_state.inds, n)
+            col0, col1, col2, col3 = st.columns([1,1,1,1])
+            with col1:
+                st.write("IA (upload)", help = "IA = Individual Ancestry")
+            with col2:
+                st.write("IA minimized", help = "IA = Individual Ancestry")
+            with col3:
+                st.write("IA maximized", help = "IA = Individual Ancestry")
+            for i in range(len(st.session_state.ids)):
+                col0, col1, col2, col3 = st.columns([1,1,1,1])
+                with col0:
+                    st.write(f"Individual {st.session_state.ids[i]}")
+                with col1:
+                    hatq = tools.subset_inds(st.session_state.hatq, st.session_state.inds)
+                    st.write(hatq[i])
+                with col2:
+                    st.write(q_min[i])
+                with col3:
+                    st.write(q_max[i])
 
 

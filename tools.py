@@ -4,6 +4,7 @@ from scipy.stats import entropy
 from scipy.optimize import minimize, LinearConstraint, NonlinearConstraint
 import re
 
+
 #################################################
 ## Importing data from a structure output file ## 
 #################################################
@@ -20,36 +21,38 @@ def get_K(structure_file):
         return int(match.group(1))  
     else:
         raise ValueError(f"K not found in {structure_file}")
-        return None 
 
 # In a line of the form
 # 0   (0.826) 0.542 0.999
 # return [0.542, 0.999] : np.array
-def get_data(line):
-    modified_line = re.sub(r"\s+[0-9]+\s*\(0\.[0-9]+\)", "", line)
-    values = [val for val in modified_line.split() if val != ""]        
+def get_data(line, K):
     # print(line)
-    return np.array(values, dtype=float)          
-
+    l = line.strip().split(" ")
+    #print(l)
+    return [float(x) for x in l[-K:]]
+    
 # get p from structure file (as lines)
 # returns a dict key: value, where key is an identifier of a marker, and value is a K x J_m array
 # with the allele frequencies in all populations at all allelels.
 def get_p(lines):
+    K = get_K(lines)
     lines_decoded = [line.decode('utf-8') for line in lines]  # Assuming 'utf-8' encoding
     output_text = ''.join([line.decode('utf-8') for line in lines])
     
     res = {}
     # The information for the next marker starts like this:
-    pattern = r'Locus\s+\d+\s*:\s*(\S+)'
+    #pattern = r'Locus\s+\d+\s*:\s*(\S+)'
+    #pattern = r'Locus\s+\S+'
     for i, line in enumerate(lines_decoded):
-        match = re.search(pattern, line)
-        if match:
-            marker = match.group(1)
+        #match = re.search(pattern, line)
+        if "Locus" in line: 
+            l = line.strip().split(" ")
+            marker = l[-1] if l[-1] != ":" else l[-2]
             j = next((k for k, line in enumerate(output_text.splitlines()[i:], start=i+1) if " missing data" in line), None)
             k = next((l for l, line in enumerate(output_text.splitlines()[j:], start=j) if line.strip() == ""), None)
             # allele frequencies are in lines j:k
             # print([get_data(line) for line in output_text.splitlines()[j:k]])
-            res[marker] = np.array([get_data(line) for line in output_text.splitlines()[j:k]])
+            res[marker] = np.array([get_data(line, K) for line in output_text.splitlines()[j:k]])
     return res
 
 # get q from structure file (as lines)
@@ -84,6 +87,19 @@ def get_q(lines):
 # This function is applied to get_p(lines) and get_q(lines).
 def to_df(res):
     return pd.DataFrame(np.vstack([value for _, value in res.items()]))
+
+#####################################
+## Importing data from other files ## 
+#####################################
+
+def load_file_notSTRUCTURE(path_q, path_p, path_pJ):
+    data_p = pd.read_csv(path_p, delimiter=" ", header=None)
+    data_q = pd.read_csv(path_q, delimiter=" ", header=None)
+    if path_pJ:
+        data_J = pd.read_csv(path_pJ, delimiter=" ", header=None)
+    else:
+         data_J = 0     
+    return data_q, data_p, data_J
 
 #################################################
 ## Optimizing routine for finding an optimal S ##
@@ -165,61 +181,78 @@ def function_for_nonlinear_constraint(x, hatp):
 # fun = (lambda x : -mean_size(x, hatq, pop, inds))
 # fun = (lambda x : mean_entropy(x, hatq, inds))
 # fun = (lambda x : -mean_entropy(x, hatq, inds))
-def find_S(fun, hatq, hatp):
+# n is the number of trials, the best is taken
+def find_S(fun, hatq, hatp, n = 1):
     K = hatq.shape[1]
     if K != hatp.shape[1]:
         raise ValueError("In find_S, hatq and hatp must have the same number of columns")
     # All entries in S cannot be smaller than -1 or larger than 1
-    bounds = [(-1,1) for i in range(K*K)]
-    # x0 is close to the identity, but some U[-.2,.2] away
-    x0 = np.array([[np.random.uniform(-1/K, 1/K) for e in range(K)] for e in range(K)])
-    x0 = np.identity(K) + x0
-    # rows in x0 must be such that the corresponding S has row sum of 1
-    x0 = (x0.dot(np.diag([1/z for z in x0.sum(axis=1)]))).flatten()
-
+    bounds = [(-1,1) for i in range(K*K)]    
     # The three constraints from above
     constraints = [
         LinearConstraint(matrix_for_linear_constraint1(K), 1, 1),
         LinearConstraint(matrix_for_linear_constraint2(hatq), 0, np.inf),
         NonlinearConstraint(lambda x: function_for_nonlinear_constraint(x, hatp), 0, np.inf)
         ]
-    #result = minimize(fun = (lambda x : -mean_size(x, hatq, 0, inds)), x0 = x0, constraints = constraints, bounds = bounds)
-    #result = minimize(fun = (lambda x : mean_entropy(x, hatq, inds)), x0 = x0, constraints = constraints, bounds = bounds)
-    res = minimize(fun = fun, x0 = x0, constraints = constraints, bounds = bounds)
-    return res
+    best = None
+    for i in range(n):
+        # x0 is close to the identity, but some U[-.2,.2] away
+        x0 = np.array([[np.random.uniform(-1/K, 1/K) for e in range(K)] for e in range(K)])
+        x0 = np.identity(K) #+ x0
+        # rows in x0 must be such that the corresponding S has row sum of 1
+        x0 = (x0.dot(np.diag([1/z for z in x0.sum(axis=1)]))).flatten()
+        res = minimize(fun = fun, x0 = x0, constraints = constraints, bounds = bounds)
+        if res.success:
+            try:
+                if res.fun < best.fun:
+                    best = res 
+            except:
+                best = res
+    return best
 
 # After finding the optimal S, we can also report the optimal q for minimizing fun
 # We usually only report the optimal q for individuals in inds (which were used to minimize fun)
-def find_q(fun, hatq, hatp, inds = None):
+def find_q(fun, hatq, hatp, inds = None, n=1):
     K = hatq.shape[1]
-    res = find_S(fun, hatq, hatp)
-    S = np.reshape(res.x, (K,K))
+    res = find_S(fun, hatq, hatp, n)
+    if res:
+        S = np.reshape(res.x, (K,K))
+    else:
+        print("No optimum found. Proceeding with initial values.")
+        S = np.identity(K)
     if inds:
         hatq = subset_inds(hatq, inds)
     return hatq.dot(S)
 
 # Some tests
 if __name__ == "__main__":
-    default_STRUCTURE_path = 'Example_Input/output_structure_f'
+    np.random.seed(19)
+#    default_STRUCTURE_path = 'Example_Input/output_structure_f'
+    default_STRUCTURE_path = 'Example_Input/output_structure_K3_f'
+#    default_STRUCTURE_path = 'Example_Input/output_structure_K3_not_biallelic_f'
     lines = load_structure_file(default_STRUCTURE_path)
     hatq_df = get_q(lines)
     hatq = to_df(hatq_df)
-    hatp_df = get_p(lines)
+    # print(lines)
+    hatp_df = get_p(lines)    
+    # print(hatp_df)
     hatp = to_df(hatp_df)
     K = get_K(lines)
     N = hatq.shape[0]
     pop = 0
-    inds = [1 if i < 10 else 0 for i in range(N)]
-    print("Minimizing the contribution of population 0 in the first 10 individuals in output_structure_f:")
+    first = 10
+    inds = [1 if i < first else 0 for i in range(N)]
+    print(f"Minimizing the contribution of population 0 in the first {first} individuals in {default_STRUCTURE_path}:")
     fun = (lambda x : mean_size(x, hatq, pop, inds))
-    print(find_q(fun, hatq, hatp, inds))
+    print(find_S(fun, hatq, hatp, 10))
+    print(find_q(fun, hatq, hatp, inds, 10))
 
-    print("Minimizing the entropy in the first 10 individuals in output_structure_f:")
+    print(f"Minimizing the entropy in the first {first} individuals in {default_STRUCTURE_path}:")
     fun = (lambda x : mean_entropy(x, hatq, inds))
     print(find_q(fun, hatq, hatp, inds))
     
     print("Generating some random data (with fixed seed) with K=3.")
-    np.random.seed(41)
+    # np.random.seed(41)
     inds = None
     hatq1 = np.random.uniform(0.2, 0.8, size=(1000, 1)) 
     hatq2 = np.random.uniform(0.2, 0.8, size=(1000, 1)) 

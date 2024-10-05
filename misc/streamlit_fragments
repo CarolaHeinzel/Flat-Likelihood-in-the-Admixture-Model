@@ -1,0 +1,179 @@
+#st.write("You can use an output file of STRUCTURE, which will then be sorted into $q$- and $p$-matrices.")
+#st.write("For the other case, you must upload two files (for bi-allelic loci) or three files (of some alleles are multi-allelic).:\n  * The $q$-file of individual admixtures;\n  * The $p$-file of allele frequencies in all populations;\n  * Some J file??")
+
+
+    with st.expander('Input Data'):
+        cols = st.columns([K] + [1 for _ in range(K)])
+        with cols[0]:
+            st.subheader("Data q")
+            data_q = data_q
+            colors = plt.cm.tab10(np.linspace(0, 1, data_q.shape[1]))
+
+            q_alle = correct_format(data_q)
+            q_alle_1 = np.transpose(q_alle)
+
+            fig, ax = plt.subplots(figsize=(20, 8))
+            bottom = np.zeros(q_alle_1.shape[0])
+
+            for j in range(q_alle_1.shape[1]):
+                ax.bar(range(q_alle_1.shape[0]), q_alle_1[:, j], bottom=bottom, color=colors[j], label=f'Population {j + 1}')
+                bottom += q_alle_1[:, j]
+
+            ax.set_xticks(range(len(individual_names)))
+            #print(individual_names)
+
+            ax.set_xticklabels(individual_names, rotation=90, ha='right')
+            ax.set_xlabel('Individuals')
+            ax.set_ylabel('Estimated IAs')
+            ax.set_ylim(0, 1)
+            ax.legend(title='Populations')
+
+            st.pyplot(fig)
+        with cols[1]:
+            st.subheader("Data p")
+            data_q = data_p
+            colors = plt.cm.tab10(np.linspace(0, 1, data_q.shape[1]))
+
+            q_alle = correct_format(data_q)
+            q_alle_1 = np.transpose(q_alle)
+
+            fig, ax = plt.subplots(figsize=(20, 8))
+            bottom = np.zeros(q_alle_1.shape[0])
+
+            for j in range(q_alle_1.shape[1]):
+                ax.bar(range(q_alle_1.shape[0]), q_alle_1[:, j], bottom=bottom, color=colors[j], label=f'Population {j + 1}')
+                bottom += q_alle_1[:, j]
+
+            ax.set_xticks(range(len(marker_names)))
+            ax.set_xlabel('Markers')
+            ax.set_ylabel('Estimated Allele Frequencies')
+            ax.set_ylim(0, K)
+            ax.legend(title='Populations')
+
+            st.pyplot(fig)
+
+    # Individuelle Admixture (q) darstellen
+    with st.expander('Individual Admixture (q)'):
+        cols = st.columns(len(data_q_out))
+
+        for i, d in enumerate(data_q_out):
+            st.write(data_q_out)
+        
+            with cols[i]:
+                if K == 2 and poss != "P2" and poss != "P3":  
+                    #st.write(d["data"])
+                    data_q = d["data"]
+                    colors = plt.cm.tab10(np.linspace(0, 1, data_q.shape[1]))
+
+                    q_alle = correct_format(data_q)  # Korrekte Formatierung der Daten
+                    q_alle_1 = np.transpose(q_alle) 
+
+                    fig, ax = plt.subplots(figsize=(20, 8))  # Breite und Höhe nach Bedarf anpassen
+                    bottom = np.zeros(q_alle_1.shape[0])  # Basislinie für das gestapelte Diagramm
+
+                    for j in range(q_alle_1.shape[1]):  # Über jede Population iterieren
+                        ax.bar(range(q_alle_1.shape[0]), q_alle_1[:, j], bottom=bottom, color=colors[j], label=f'Population {j + 1}')
+                        bottom += q_alle_1[:, j]  # Aktualisieren der Basislinie
+
+                    ax.set_xticks(range(len(individual_names)))  # Setze die Positionen der x-Achsen-Ticks
+                    ax.set_xticklabels(individual_names, rotation=90, ha='right')  # Setze die benutzerdefinierten Labels und drehe sie
+
+                    ax.set_xlabel('Individuals')
+                    ax.set_ylabel('Estimated IAs')
+                    ax.set_ylim(0, 1)
+                    ax.legend(title='Populationen')  
+
+                    st.pyplot(fig)
+                else:  
+                
+                    st.write(data_q_out[0])
+                    data_q = data_q_out[0]
+                    colors = plt.cm.tab10(np.linspace(0, 1, K))
+
+                    q_alle = data_q
+                    q_alle_1 = np.transpose(q_alle) 
+		     
+                    fig, ax = plt.subplots(figsize=(20, 8))  
+                    bottom = np.zeros(N)  
+
+                    for j in range(K):  
+                        ax.bar(range(N), q_alle_1[:, j], bottom=bottom, color=colors[j], label=f'Population {j + 1}')
+                        for l in range(len(bottom)):
+                            bottom[l] += q_alle_1[l, j]  
+                    ax.set_xticks(range(len(individual_names)))  
+                    ax.set_xticklabels(individual_names, rotation=90, ha='right') 
+
+                    ax.set_xlabel('Individuals')
+                    ax.set_ylabel('Estimated IAs')
+                    ax.set_ylim(0, 1)
+                    ax.legend(title='Populations')  
+
+                    st.pyplot(fig)
+
+    with st.expander(f'Allele Frequencies (p) '):
+        cols = st.columns([1 for i in data_p_out])        
+        i = 0
+        st.write(data_p_out)
+
+        for d in data_p_out:
+            with cols[i]:
+
+                if(K == 2 and poss != "P2" and poss != "P3"):
+                
+
+                    data_q = d["data"]
+                    colors = plt.cm.tab10(np.linspace(0, 1, data_q.shape[1]))
+
+                    q_alle = correct_format(data_q)  
+                    q_alle_1 = np.transpose(q_alle) 
+
+                    fig, ax = plt.subplots(figsize=(20, 8))  
+                    bottom = np.zeros(q_alle_1.shape[0])  
+		    
+                    for j in range(q_alle_1.shape[1]): 
+                        ax.bar(range(q_alle_1.shape[0]), q_alle_1[:, j], bottom=bottom, color=colors[j], label=f'Population {j + 1}')
+                        bottom += q_alle_1[:, j]  
+
+                    #ax.set_xticks(range(len(marker_names)))  
+                    #ax.set_xticklabels(marker_names, rotation=90, ha='right')  
+
+                    ax.set_xlabel('Markers')
+                    ax.set_ylabel('Estimated Allele Frequencies')
+                    ax.set_ylim(0, K)
+                    ax.legend(title='Populations')  
+
+                    st.pyplot(fig)                
+                else:  
+                
+                    st.write(data_p_out[0])
+                    data_q = data_p_out[0]
+                    colors = plt.cm.tab10(np.linspace(0, 1, K))
+
+                    q_alle = data_q
+                    q_alle_1 = np.transpose(q_alle) 
+		     
+                    fig, ax = plt.subplots(figsize=(20, 8))  
+                    bottom = np.zeros(M)  
+                    bar_width = 0.15
+
+                    for j in range(K):  
+                        x_positions = np.arange(M) + j * bar_width  # Position für Population j
+                        ax.bar(x_positions, q_alle_1[:, j], width=bar_width, color=colors[j], label=f'Population {j + 1}')
+			    
+                    ax.set_xticks([])  
+
+                    ax.set_xlabel('Markers')
+                    ax.set_ylabel('Estimated Allele Frequencies')
+                    ax.set_ylim(0, 1)
+                    ax.legend(title='Populations')  
+
+                    st.pyplot(fig)
+
+
+
+                i = i+1
+    if (data_type == "STRUCTURE Output"):
+
+    	with st.expander(f'Marker Names and Individual Names '):
+
+                st.write(marker_names, individual_names)
