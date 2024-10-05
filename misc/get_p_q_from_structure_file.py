@@ -22,7 +22,7 @@ def split_array(arr, K):
 def format_and_save(data, K):
     # Flatten the nested list
     flattened_data = [item for sublist in data for row in sublist for item in row]
-
+ 
     # Split the flattened list into chunks of size K
     reshaped_data = [flattened_data[i:i+K] for i in range(0, len(flattened_data), K)]
     return reshaped_data
@@ -70,7 +70,6 @@ def get_p(lines):
             numeric_values = np.array(values, dtype=float)
             # Sum corresponding values for the two K sections
             res_allp.append(split_array(numeric_values, K))
-        
    
     res_allp = format_and_save(res_allp, K)
     if(len(res) == 0):
