@@ -210,6 +210,26 @@ def find_S(fun, hatq, hatp, n = 1):
                 best = res
     return best
 
+def find_q_forKeq2(hatq, hatp, ind, pop, maximize = True):
+    if hatq.shape[1] != 2 or hatp.shape[1] != 2 :
+        raise ValueError("In find_q_forKeq2, hatq and hatp must have 2 columns.")
+    if pop not in [0,1]:
+        raise ValueError("In find_q_forKeq2, pop must be 0 or 1.")
+    # We want to minimize/maximize column 0
+    if pop == 1:
+        hatq = hatq[:[1,0]]
+        hatp = hatp[:[1,0]]
+
+    u^ast = 
+    u_ast = 
+    v_ast = 
+    v^ast = 
+
+    if pop == 1:
+        res = res[:[1,0]]
+    return res
+
+
 # After finding the optimal S, we can also report the optimal q for minimizing fun
 # We usually only report the optimal q for individuals in inds (which were used to minimize fun)
 def find_q(fun, hatq, hatp, inds = None, n=1):
