@@ -23,7 +23,10 @@ def plot_q_all(q):
     ).properties(), use_container_width=True)
 
 default_structure_path_K3 = 'Example_Input/CEU_IBS_TSI_enhanced_corr_K3_f'
+default_structure_path_K3_url = "https://github.com/CarolaHeinzel/Flat-Likelihood-in-the-Admixture-Model/blob/main/Example_Input/CEU_IBS_TSI_enhanced_corr_K3_f"
 default_structure_path_K2 = 'Example_Input/CEU_IBS_TSI_enhanced_corr_f'
+default_structure_path_K2_url = "https://github.com/CarolaHeinzel/Flat-Likelihood-in-the-Admixture-Model/blob/main/Example_Input/CEU_IBS_TSI_enhanced_corr_f"
+
 n = 10 # number of trials for optimization
 
 st.set_page_config(page_title="EMALAM", page_icon=None, layout="wide", initial_sidebar_state="auto", menu_items=None)
@@ -56,11 +59,6 @@ if "ids" not in st.session_state:
 
 lines = None
 
-default_p_path = 'Example_Input/p_all_K2'
-default_q_path = 'Example_Input/q_K2'
-default_pJ_path = 'Example_Input/pJ_K2'
-default_STRUCTURE_path = 'Example_Input/output_structure_f'
-
 st.header("EMALAM")
 st.write("See xxx biorxiv for a reference what this webpage is about.")
 
@@ -71,8 +69,8 @@ st.write("See xxx biorxiv for a reference what this webpage is about.")
 # At the end of this section, we have hatq and hatp
 
 default_options = [
-    "Example with K=3 [STRUCTURE output data](github.com)", 
-    "Example with K=2 [STRUCTURE output data](github.com)",
+    f"Example with K=3 [STRUCTURE output data]({default_structure_path_K3_url})", 
+    f"Example with K=2 [STRUCTURE output data]({default_structure_path_K2_url})",
     #"Example [p- and q-matrizes](github.com)", 
     "Upload data"]
 default = st.radio(
