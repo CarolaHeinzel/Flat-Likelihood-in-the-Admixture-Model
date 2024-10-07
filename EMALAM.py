@@ -135,20 +135,21 @@ if lines is not None:
 ###################
 
 if lines is not None:
-    if st.session_state.hatq is not None and st.session_state.hatq is not None and any(st.session_state.inds) == True and (target == target_options[0] or st.session_state.popl is not None):
+    hatq = st.session_state.hatq
+    hatp = st.session_state.hatp
+    inds = st.session_state.inds
+    popl = st.session_state.popl
+    ids = st.session_state.ids
+    if hatq is not None and hatq is not None and any(inds) == True and (target == target_options[0] or popl is not None):
         submit = st.button("Submit")
         if submit:
             with st.spinner('The computer is calculating...'):
                 if target == target_options[0]:
-                    fun = (lambda x : tools.mean_entropy(x, st.session_state.hatq, st.session_state.inds))
-                    q_min = tools.find_q(fun, st.session_state.hatq, st.session_state.hatp, st.session_state.inds, n)
-                    fun = (lambda x : -tools.mean_entropy(x, st.session_state.hatq, st.session_state.inds))
-                    q_max = tools.find_q(fun, st.session_state.hatq, st.session_state.hatp, st.session_state.inds, n)
+                    q_min = tools.find_q(tools.mean_entropy, hatq, hatp, inds, n, (hatq, inds))
+                    q_max = tools.find_q(tools.neg_mean_entropy, hatq, hatp, inds, n, (hatq, inds)) 
                 else:
-                    fun = (lambda x : tools.mean_size(x, st.session_state.hatq, st.session_state.popl))
-                    q_min = tools.find_q(fun, st.session_state.hatq, st.session_state.hatp, st.session_state.inds, n)
-                    fun = (lambda x : -tools.mean_size(x, st.session_state.hatq, st.session_state.popl))
-                    q_max = tools.find_q(fun, st.session_state.hatq, st.session_state.hatp, st.session_state.inds, n)
+                    q_min = tools.find_q(tools.mean_size, hatq, hatp, inds, n, (hatq, popl, inds))
+                    q_max = tools.find_q(tools.neg_mean_size, hatq, hatp, inds, n, (hatq, popl, inds))
             col0, col1, col2, col3 = st.columns([1,1,1,1])
             with col1:
                 st.write("IA (upload)", help = "IA = Individual Ancestry")
@@ -156,13 +157,18 @@ if lines is not None:
                 st.write("IA minimized", help = "IA = Individual Ancestry")
             with col3:
                 st.write("IA maximized", help = "IA = Individual Ancestry")
-            for i in range(len(st.session_state.ids)):
+            for i in range(len(ids)):
                 col0, col1, col2, col3 = st.columns([1,1,1,1])
                 with col0:
-                    st.write(f"Individual {st.session_state.ids[i]}")
+                    st.write(f"Individual {ids[i]}")
                 with col1:
-                    hatq = tools.subset_inds(st.session_state.hatq, st.session_state.inds)
-                    st.write(hatq[i])
+                    hatq = tools.subset_inds(hatq, inds)
+                    categories = range(hatq.shape[1])
+                    fig, ax = plt.subplots()
+                    ax.bar(categories, hatq[i])
+                    # Barplot in Streamlit anzeigen
+                    st.pyplot(fig)
+#                    st.write(hatq[i])
                 with col2:
                     st.write(q_min[i])
                 with col3:
