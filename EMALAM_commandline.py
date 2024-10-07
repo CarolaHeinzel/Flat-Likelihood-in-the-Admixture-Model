@@ -7,13 +7,6 @@ import sympy as sp
 import argparse
 #%%
 # Application
-# 1) Load Data
-#file_path_p = '/home/ch1158/Downloads/p_CEU_IBS_TSI_K2'
-#file_path_q = '/home/ch1158/Downloads/q_CEU_IBS_TSI_K2.txt'
-#file_path_pJ = '/home/ch1158/Downloads/p_CEU_IBS_TSI_K2_J'
-
-#data_q = pd.read_csv(file_path_q, sep=' ', header=None)
-
 def correct_formatJ(data_p):
     data_p = data_p.values.tolist()
     K = len(data_p[0]) # Number of populations
@@ -43,14 +36,9 @@ def main(data_q_input, data_p_input, pJ_input,pJ_all, data_q_output, data_p_outp
     else:
         pJ = pd.read_csv(pJ_input, sep=' ', header=None)
     
-    # Bereinigen von data_p: Entferne Zeilen, die nur 1 enthalten
     data_p = data_p[~(data_p == 1).all(axis=1)]
-    
-    # Speichere die Ergebnisse in den angegebenen Ausgabedateien
     data_q.to_csv(data_q_output, sep=' ', header=False, index=False)
     data_p.to_csv(data_p_output, sep=' ', header=False, index=False)
-    
-    # Erstelle die Liste der Dateinamen
     names = [data_q_output, data_p_output]
     
     return data_q, data_p, pJ,pJ_all, names, poss, k_specific, indices_specific
@@ -73,12 +61,8 @@ if __name__ == "__main__":
 
     # Check if k_specific is required
     if args.poss in ["P4", "P5"] and not args.k_specific:
-        raise ValueError("k_specific is required when poss is P4 or P5")
-    # Rufe die main-Funktion auf und übergebe die Input-Dateien
- 
+        raise ValueError("k_specific is required when poss is P4 or P5") 
     data_q, data_p, pJ, pJ_all, names, poss, k_specific, indices_specific = main(args.data_q_input, args.data_p_input, args.pJ_input,args.pJ_all, args.data_q_output, args.data_p_output, args.poss, args.k_specific, args.indices_specific)
-    
-    # Optionale Verarbeitung für pJ
     if pJ is not None:
         pJ = correct_formatJ(pJ)
     data_p = data_p[~(data_p == 1).all(axis=1)]
