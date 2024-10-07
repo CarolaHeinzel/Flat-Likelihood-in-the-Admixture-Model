@@ -1,10 +1,29 @@
 import streamlit as st
-import plotly.express as px
+import numpy as np
+import altair as alt
+import pandas as pd
+# import plotly.express as px
 import matplotlib.pyplot as plt
 
 import tools 
 
-default_structure_path = 'Example_Input/output_structure_K3_f'
+def plot_q_all(q):
+    N = q.shape[0]
+    K = q.shape[1]    
+    q_df = pd.DataFrame({
+                    "ia": [x for qi in q for x in qi],
+                    "ind": [x for i in range(N) for x in [i]*K],
+                    "pop": [ j for i in range(N) for j in range(K)]
+                })
+    st.altair_chart(alt.Chart(q_df).mark_bar().encode(
+        x=alt.X("ind:N", sort=None, title=""),
+        y=alt.Y("ia:Q", sort = 'descending', title="", scale=alt.Scale(domain=[0, 1])),
+        color=alt.Color('pop:N', scale=alt.Scale(scheme='category10')),
+        tooltip=['pop:N', 'ia:Q']  
+    ).properties(), use_container_width=True)
+
+default_structure_path_K3 = 'Example_Input/CEU_IBS_TSI_enhanced_corr_K3_f'
+default_structure_path_K2 = 'Example_Input/CEU_IBS_TSI_enhanced_corr_f'
 n = 10 # number of trials for optimization
 
 st.set_page_config(page_title="EMALAM", page_icon=None, layout="wide", initial_sidebar_state="auto", menu_items=None)
@@ -31,7 +50,7 @@ if "ind_ids" not in st.session_state:
 if "popl" not in st.session_state:
     st.session_state.popl = None
 if "inds" not in st.session_state:
-    st.session_state.inds = None
+    st.session_state.inds = []
 if "ids" not in st.session_state:
     st.session_state.ids = None
 
@@ -51,7 +70,11 @@ st.write("See xxx biorxiv for a reference what this webpage is about.")
 
 # At the end of this section, we have hatq and hatp
 
-default_options = ["Example [STRUCTURE output data](github.com)", "Example [p- and q-matrizes](github.com)", "Upload data"]
+default_options = [
+    "Example with K=3 [STRUCTURE output data](github.com)", 
+    "Example with K=2 [STRUCTURE output data](github.com)",
+    #"Example [p- and q-matrizes](github.com)", 
+    "Upload data"]
 default = st.radio(
     "Which file(s) should be used?",
     options = default_options,
@@ -60,11 +83,14 @@ default = st.radio(
 
 if default == default_options[0]:
     use_structure_file = True
-    lines = tools.load_structure_file(default_structure_path)
+    lines = tools.load_structure_file(default_structure_path_K3)
 if default == default_options[1]:
-    use_structure_file = False
-    st.write("Sorry, no implementation yet!")
+    use_structure_file = True
+    lines = tools.load_structure_file(default_structure_path_K2)
 if default == default_options[2]:
+#    use_structure_file = False
+#    st.write("Sorry, no implementation yet!")
+#if default == default_options[3]:
     data_type_options = ["STRUCTURE Output", "Other"]
     data_type = st.selectbox(
         "Select the type of input data:",
@@ -89,11 +115,15 @@ if default == default_options[2]:
         lines = None
     
 if lines is not None:
-    hatq_df = tools.get_q(lines)
-    st.session_state.ind_ids = hatq_df.keys()
-    st.session_state.hatq = tools.to_df(hatq_df)    
-    hatp_df = tools.get_p(lines)
-    st.session_state.hatp = tools.to_df(hatp_df)
+    hatq_dict = tools.get_q(lines)
+    hatq_df = tools.to_df(hatq_dict)
+    st.session_state.hatq = np.array(hatq_df)
+    st.session_state.ind_ids = hatq_dict.keys()
+
+    hatp_dict = tools.get_p(lines)
+    hatp_df = tools.to_df(hatp_dict)
+    hatp = np.array(hatp_df)
+    st.session_state.hatp = np.array(hatp_df)
 
 
 ############################
@@ -114,22 +144,27 @@ if lines is not None:
         index=0,  # Set the default selected option to "minimize entropy"
         help = "Maximal entropy favours admixed individuals, minimal entropy favours non-admixed individuals."
     )
-    col1, col2 = st.columns([1,1])
-    with col1:
+
+    if target == target_options[1]:
+        pop_options = range(st.session_state.hatq.shape[1])
+        st.session_state.popl = st.selectbox("...for which population i", 
+                        options = pop_options,
+                        index = 0,
+                        help = "i is the column number in the structure output file, starting with 0")
+
+    showq = st.toggle("Show me the individual admixtures for all individuals", False)
+    showp = st.toggle("Show me the allele frequencies at all markers", False)
+    notall = st.toggle("Minimize/maximize target function only for a subset of individuals", False)
+    all = not notall
+    
+    if all:
+        st.session_state.inds = [True for id in st.session_state.ind_ids]
+    else:
         st.session_state.ids = st.multiselect(
             "Average the target function on the following individuals",
             options = st.session_state.ind_ids, placeholder = "Please choose one or more individuals.")
         st.session_state.inds = [id in st.session_state.ids for id in st.session_state.ind_ids]
-        
-    with col2:
-        if target == target_options[1]:
-            pop_options = range(st.session_state.hatq.shape[1])
-            st.session_state.popl = st.selectbox("...for which population i", 
-                               options = pop_options,
-                               index = 0,
-                               help = "i is the column number in the structure output file, starting with 0")
-
-
+            
 ###################
 ## Run optimizer ##    
 ###################
@@ -139,39 +174,64 @@ if lines is not None:
     hatp = st.session_state.hatp
     inds = st.session_state.inds
     popl = st.session_state.popl
+    ind_ids = st.session_state.ind_ids
     ids = st.session_state.ids
-    if hatq is not None and hatq is not None and any(inds) == True and (target == target_options[0] or popl is not None):
-        submit = st.button("Submit")
-        if submit:
-            with st.spinner('The computer is calculating...'):
-                if target == target_options[0]:
-                    q_min = tools.find_q(tools.mean_entropy, hatq, hatp, inds, n, (hatq, inds))
-                    q_max = tools.find_q(tools.neg_mean_entropy, hatq, hatp, inds, n, (hatq, inds)) 
-                else:
-                    q_min = tools.find_q(tools.mean_size, hatq, hatp, inds, n, (hatq, popl, inds))
-                    q_max = tools.find_q(tools.neg_mean_size, hatq, hatp, inds, n, (hatq, popl, inds))
-            col0, col1, col2, col3 = st.columns([1,1,1,1])
-            with col1:
-                st.write("IA (upload)", help = "IA = Individual Ancestry")
-            with col2:
-                st.write("IA minimized", help = "IA = Individual Ancestry")
-            with col3:
-                st.write("IA maximized", help = "IA = Individual Ancestry")
-            for i in range(len(ids)):
-                col0, col1, col2, col3 = st.columns([1,1,1,1])
-                with col0:
-                    st.write(f"Individual {ids[i]}")
-                with col1:
-                    hatq = tools.subset_inds(hatq, inds)
-                    categories = range(hatq.shape[1])
-                    fig, ax = plt.subplots()
-                    ax.bar(categories, hatq[i])
-                    # Barplot in Streamlit anzeigen
-                    st.pyplot(fig)
-#                    st.write(hatq[i])
-                with col2:
-                    st.write(q_min[i])
-                with col3:
-                    st.write(q_max[i])
+    K = hatq.shape[1]
+    N = hatq.shape[0]
+    M = hatp.shape[0]
+
+    submit = st.button("Submit")
+    if submit:
+        if st.session_state.ids == [] and notall == True:
+             notall = False
+        with st.spinner('The computer is calculating...'):
+            if target == target_options[0]:
+                q_min = tools.find_q(tools.mean_entropy, hatq, hatp, inds, n, (hatq, inds))
+                q_max = tools.find_q(tools.neg_mean_entropy, hatq, hatp, inds, n, (hatq, inds)) 
+            else:
+                q_min = tools.find_q(tools.mean_size, hatq, hatp, inds, n, (hatq, popl, inds))
+                q_max = tools.find_q(tools.neg_mean_size, hatq, hatp, inds, n, (hatq, popl, inds))
+                
+        st.write("### Range of individual ancestries")
+        if notall:
+            with st.expander("Individual admixtures of selected individuals"):
+                for i in range(len(ids)):
+                    col0, col1 = st.columns([1,4])
+                    with col0:
+                        st.write(f"Individual {ids[i]}")
+                    with col1:
+                        q = np.array([hatq[i], q_min[i], q_max[i]]).flatten()
+                        q_df = pd.DataFrame({
+                                "ia": q,
+                                "cat": ["start" for i in range(K)] + ["min" for i in range(K)] + ["max" for i in range(K)], 
+                                "pop": [ j for i in range(3) for j in range(K)]
+                            })
+        #                    st.write(q_df)
+                        st.altair_chart(alt.Chart(q_df).mark_bar().encode(
+                            x=alt.Y("ia:Q", title="", scale=alt.Scale(domain=[0, 1])),
+                            y=alt.X("cat:N", sort=None, title=""),
+                            color=alt.Color('pop:N', scale=alt.Scale(scheme='category10')),
+                            tooltip=['pop:N', 'ia:Q']  
+                        ).properties(width=700), use_container_width=False)
+
+        if showq: 
+            with st.expander("Individual admixtures of all individuals"):
+                st.write(f"N = {N}, K = {K}, M = {M}")
+                st.write("#### Initial values")
+                plot_q_all(hatq)
+                st.write("#### Minimum")
+                plot_q_all(q_min)
+                st.write("#### Maximum")
+                plot_q_all(q_max)
+        if showp:
+            with st.expander("Allele frequencies at all markers"):
+                st.write("#### Initial values")
+                tools.find_q(tools.mean_entropy, hatq, hatp, inds, n, (hatq, inds))                
+                plot_p_all(hatq)
+                st.write("#### Minimum")
+                plot_p_all(q_min)
+                st.write("#### Maximum")
+                plot_p_all(q_max)
+            
 
 
