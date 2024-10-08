@@ -22,6 +22,31 @@ def plot_q_all(q):
         tooltip=['pop:N', 'ia:Q']  
     ).properties(), use_container_width=True)
 
+def plot_p_all(hatp_dict):
+    first_key = next(iter(hatp_dict))  # Erster Key
+    first_value = hatp_dict[first_key]  # Erster Value
+    K = first_value.shape[1]
+    for k in range(K):
+        marker = []
+        for key, value in hatp_dict.items():
+            J = value.shape[0]
+            if J > 1:
+                for j in range(J):
+                    marker.append({
+                        "id": key,
+                        "p": hatp_dict[key][j,k],
+                        "allele": j
+                    })
+        p_df  = pd.DataFrame(marker)
+        st.write(f"Population {k}")
+        st.altair_chart(alt.Chart(p_df).mark_bar().encode(
+            x=alt.X("id:N", title=""),
+            y=alt.Y("p:Q", sort = 'descending', title=""),
+            color=alt.Color('allele:N', scale=alt.Scale(scheme='category10')),
+            tooltip=['marker:N', 'allele:N', 'p:Q']  
+        ).properties(), use_container_width=True)
+
+
 default_structure_path_K3 = 'Example_Input/CEU_IBS_TSI_enhanced_corr_K3_f'
 default_structure_path_K3_url = "https://github.com/CarolaHeinzel/Flat-Likelihood-in-the-Admixture-Model/blob/main/Example_Input/CEU_IBS_TSI_enhanced_corr_K3_f"
 default_structure_path_K2 = 'Example_Input/CEU_IBS_TSI_enhanced_corr_f'
@@ -150,7 +175,7 @@ if lines is not None:
                         index = 0,
                         help = "i is the column number in the structure output file, starting with 0")
 
-    showq = st.toggle("Show me the individual admixtures for all individuals", False)
+    showq = st.toggle("Show me the individual admixtures for all individuals", True)
     showp = st.toggle("Show me the allele frequencies at all markers", False)
     notall = st.toggle("Minimize/maximize target function only for a subset of individuals", False)
     all = not notall
@@ -184,15 +209,21 @@ if lines is not None:
              notall = False
         with st.spinner('The computer is calculating...'):
             if target == target_options[0]:
-                q_min = tools.find_q(tools.mean_entropy, hatq, hatp, inds, n, (hatq, inds))
-                q_max = tools.find_q(tools.neg_mean_entropy, hatq, hatp, inds, n, (hatq, inds)) 
+                S_min = tools.find_S(tools.mean_entropy, hatq, hatp, n, (hatq, inds))
+                S_max = tools.find_S(tools.neg_mean_entropy, hatq, hatp, n, (hatq, inds)) 
+                #q_min = tools.find_q(tools.mean_entropy, hatq, hatp, n, (hatq, inds))
+                #q_max = tools.find_q(tools.neg_mean_entropy, hatq, hatp, n, (hatq, inds)) 
             else:
-                q_min = tools.find_q(tools.mean_size, hatq, hatp, inds, n, (hatq, popl, inds))
-                q_max = tools.find_q(tools.neg_mean_size, hatq, hatp, inds, n, (hatq, popl, inds))
-                
-        st.write("### Range of individual ancestries")
-        if notall:
-            with st.expander("Individual admixtures of selected individuals"):
+                S_min = tools.find_S(tools.mean_size, hatq, hatp, n, (hatq, popl, inds))
+                S_max = tools.find_S(tools.neg_mean_size, hatq, hatp, n, (hatq, popl, inds))
+                #q_min = tools.find_q(tools.mean_size, hatq, hatp, n, (hatq, popl, inds))
+                #q_max = tools.find_q(tools.neg_mean_size, hatq, hatp, n, (hatq, popl, inds))
+            q_min = hatq.dot(S_min)
+            q_max = hatq.dot(S_max)
+
+        with st.expander("### Range of individual ancestries"):
+            if notall:
+                st.write("Individual admixtures of selected individuals")
                 for i in range(len(ids)):
                     col0, col1 = st.columns([1,4])
                     with col0:
@@ -212,8 +243,8 @@ if lines is not None:
                             tooltip=['pop:N', 'ia:Q']  
                         ).properties(width=700), use_container_width=False)
 
-        if showq: 
-            with st.expander("Individual admixtures of all individuals"):
+            else:
+                st.write("## Individual admixtures of all individuals")
                 st.write(f"N = {N}, K = {K}, M = {M}")
                 st.write("#### Initial values")
                 plot_q_all(hatq)
@@ -224,12 +255,19 @@ if lines is not None:
         if showp:
             with st.expander("Allele frequencies at all markers"):
                 st.write("#### Initial values")
-                tools.find_q(tools.mean_entropy, hatq, hatp, inds, n, (hatq, inds))                
-                plot_p_all(hatq)
-                st.write("#### Minimum")
-                plot_p_all(q_min)
-                st.write("#### Maximum")
-                plot_p_all(q_max)
-            
+                plot_p_all(hatp_dict)
+                min_p_dict = max_p_dict = hatp_dict
+                T_min = np.linalg.pinv(S_min)
+                T_max = np.linalg.pinv(S_max)
+                p_min_dict = { key: value.dot(T_min.T) for key, value in hatp_dict.items() } 
+                p_max_dict = { key: value.dot(T_max.T) for key, value in hatp_dict.items() } 
+                st.write("#### p for minimal target function")
+                plot_p_all(p_min_dict)
+                st.write("#### p for maximal target function")
+                plot_p_all(p_max_dict)
+
+                
+#       
+
 
 

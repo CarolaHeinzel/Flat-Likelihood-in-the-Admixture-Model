@@ -1,9 +1,12 @@
+# TODOs
+# Download of q and p
+# Jacobi Matrix für Optimierung angeben
+
 import numpy as np
 import pandas as pd
 from scipy.stats import entropy
 from scipy.optimize import minimize, LinearConstraint, NonlinearConstraint
 import re
-
 
 #################################################
 ## Importing data from a structure output file ## 
@@ -116,8 +119,6 @@ def load_file_notSTRUCTURE(path_q, path_p, path_pJ):
 # 0\leq (S.linalg.inv).dot(p.T)\leq 1
 # The matrix S is parametrized by the list x, where we will use
 # S = np.reshape(np.array(x), (K,K))
-np.array([[1,2],[3,4]]).dot(np.array([1,1]))
-np.array([1,1]).dot(np.array([[1,2],[3,4]]))
 
 # inds is a vector of 0/False and 1/True of length N. 
 # This function is used in order to consider subsets of all N individuals
@@ -182,6 +183,17 @@ def function_for_nonlinear_constraint(x, hatp):
     T = np.linalg.pinv(S) # more stable than .inv
     return T.dot(hatp.T).flatten()
 
+def get_UuVv(hatp, hatq):
+    U = max(hatp[:,1]/hatp[:,0]) # as u^\ast in the manuscript
+    u = min(hatp[:,1]/hatp[:,0]) # as u_\ast in the manuscript
+    V = max(hatq[:,0]/hatq[:,1]) # as v^\ast in the manuscript
+    v = min(hatq[:,0]/hatq[:,1]) # as v_\ast in the manuscript
+    U = min(U, 1e12)
+    V = min(V, 1e12)
+    u = max(u, 1e-12)
+    v = max(v, 1e-12)
+    return U, u, V, v
+
 # Find the best S for minimizing fun using all constraints
 # For fun, we think of either of:
 # fun = mean_size with args = (hatq, pop, inds)
@@ -194,101 +206,103 @@ def find_S(fun, hatq, hatp, n = 1, args = ()):
     if K != hatp.shape[1]:
         raise ValueError("In find_S, hatq and hatp must have the same number of columns")
     # All entries in S cannot be smaller than -1 or larger than 1
-    bounds = [(-2,2) for i in range(K*K)]
-    # The three constraints from above
-    constraints = [
-        LinearConstraint(matrix_for_linear_constraint1(K), 1, 1),
-        LinearConstraint(matrix_for_linear_constraint2(hatq), 0, np.inf),
-        NonlinearConstraint(lambda x: function_for_nonlinear_constraint(x, hatp), 0, np.inf)
-        ]
-    best = None
-    for _ in range(n):
-        # x0 is close to the identity, but some U[-.2,.2] away
-        x0 = np.array([[np.random.uniform(-4/K, 4/K) for e in range(K)] for e in range(K)])
-        x0 = np.identity(K) #+ x0
-        # rows in x0 must be such that the corresponding S has row sum of 1
-        x0 = (x0.dot(np.diag([1/z for z in x0.sum(axis=1)]))).flatten()
-        res = minimize(fun = fun, args = args, x0 = x0, constraints = constraints, bounds = bounds)
-        if res.success:
-            try:
-                if res.fun < best.fun:
-                    best = res 
-            except:
-                best = res
-    return best
-
-def find_q_forKeq2(hatq, hatp, pop, maximize = True):
-    N = hatq.shape[0]
-    K = hatq.shape[1]
-    if hatq.shape[1] != 2 or hatp.shape[1] != 2 :
-        raise ValueError("In find_q_forKeq2, hatq and hatp must have 2 columns.")
-    if pop not in [0,1]:
-        raise ValueError("In find_q_forKeq2, pop must be 0 or 1.")
-    # We want to minimize/maximize column 0
-    if pop == 1:
-        hatq = hatq[:,[1,0]]
-        hatp = hatp[:,[1,0]]
-
-    U = max(hatp[:,1]/hatp[:,0]) # as u^\ast in the manuscript
-    u = min(hatp[:,1]/hatp[:,0]) # as u_\ast in the manuscript
-    V = max(hatq[:,0]/hatq[:,1]) # as v^\ast in the manuscript
-    v = min(hatq[:,0]/hatq[:,1]) # as v_\ast in the manuscript
-    U = min(U, 1e12)
-    V = min(V, 1e12)
-    u = max(u, 1e-12)
-    v = max(v, 1e-12)
-    print(f"U = {U}, u = {u}, V = {V}, v = {v}")
-
-    if maximize:
-        res = hatq[:, 0] * (1 + V)/(u + V) + hatq[:, 1] * (1 + V)/(1 + V / u)
+    if K == 2 and (fun.__name__ == "mean_size" or fun.__name__ == "neg_mean_size"): 
+        U, u, V, v = get_UuVv(hatp, hatq)
+        print(f"U = {U}, u = {u}, V = {V}, v = {v}")
+        if fun.__name__ == "mean_size":
+            a = (1 + v) / (U + v)
+            b = (1 - U) / (1 + U / v)
+        else:
+            a = (u - 1) / (u + V)
+            b = (1 + V) / (1 + V / u)
+        best = np.array([[1-a, a], [b, 1-b]])
     else:
-        res = hatq[:, 0] * (U - 1)/(U - v) + hatq[:, 1] * (1 - U)/(1 + U / v)
-    print(f"res vor b {res}")
-    res = np.vstack([res, 1-res]).T
-
-    if pop == 1:
-        res = res[[1,0]]
-
-    return res.reshape(N, K)
-
+        bounds = [(-2,2) for i in range(K*K)]
+        # The three constraints from above
+        constraints = [
+            LinearConstraint(matrix_for_linear_constraint1(K), 1, 1),
+            LinearConstraint(matrix_for_linear_constraint2(hatq), 0, np.inf),
+            NonlinearConstraint(lambda x: function_for_nonlinear_constraint(x, hatp), 0, np.inf)
+            ]
+        best = None
+        for _ in range(n):
+            # x0 is close to the identity, but some U[-.2,.2] away
+            x0 = np.array([[np.random.uniform(-4/K, 4/K) for e in range(K)] for e in range(K)])
+            x0 = np.identity(K) #+ x0
+            # rows in x0 must be such that the corresponding S has row sum of 1
+            x0 = (x0.dot(np.diag([1/z for z in x0.sum(axis=1)]))).flatten()
+            res = minimize(fun = fun, args = args, x0 = x0, constraints = constraints, bounds = bounds)
+            if res.success:
+                try:
+                    if res.fun < best.fun:
+                        best = res 
+                except:
+                    best = res
+            if best:
+                best = np.reshape(best.x, (K,K))
+    return np.array(best)
 
 # After finding the optimal S, we can also report the optimal q for minimizing fun
-# We usually only report the optimal q for individuals in inds (which were used to minimize fun)
-def find_q(fun, hatq, hatp, inds = None, n=1, args = ()):
+# n is the number of trials to find an optimum
+def find_q(fun, hatq, hatp, n=1, args = ()):
+    N = hatq.shape[0]
     K = hatq.shape[1]
     # Does the formula apply?
-    if K == 2 and (fun.__name__ == "mean_size" or fun.__name__ == "neg_mean_size"): # and sum(inds) == 1:
-        q_max = find_q_forKeq2(hatq, hatp, 0, maximize = True)
-        q_min = find_q_forKeq2(hatq, hatp, 0, maximize = False)
-        print(f"q_max = {q_max}")
-        print(f"q_min = {q_min}")
-        if fun.__name__ == "mean_size":
-            res = np.array(q_min)
-        elif fun.__name__ == "neg_mean_size":
-            res = np.array(q_max)
-        #elif fun.__name__ == "mean_entropy":
-            # entropy is minimal if individuals are as non-admixed as possible
-        #    x = min(q_min + q_max) 
-        #    res = np.array([[[x, 1-x]]])
-        #elif fun.__name__ == "neg_mean_entropy":
-            # Entropy is maximal if the solution closest to [0.5, 0.5]
-            # If q_max[0] < 0.5, report q_max[0]
-            # If q_min[0] > 0.5, report q_min[0]
-            # If q_min[0] < 0.5 < q_max[0], report 0.5
-        #    x = min(q_max[0], max(q_min[0],0.5))
-        #    res = np.array([[x, 1-x]])
+    if K == 2 and (fun.__name__ == "mean_size" or fun.__name__ == "neg_mean_size"):
+        # We want to minimize/maximize column 0
+        if pop == 1:
+            hatq = hatq[:,[1,0]]
+            hatp = hatp[:,[1,0]]
+        U, u, V, v = get_UuVv(hatp, hatq)
+        # print(f"U = {U}, u = {u}, V = {V}, v = {v}")
+        if fun.__name__ == "neg_mean_size":
+            res = hatq[:, 0] * (1 + V)/(u + V) + hatq[:, 1] * (1 + V)/(1 + V / u)
         else:
-            raise ValueError("Function must be one of mean_size, neg_mean_size, mean_entropy, neg_mean_entropy.")
+            res = hatq[:, 0] * (U - 1)/(U - v) + hatq[:, 1] * (1 - U)/(1 + U / v)
+        # print(f"res vor b {res}")
+        res = np.vstack([res, 1-res]).T
+        if pop == 1:
+            res = res[1,0]
+        res = np.array(res).reshape(N,K)
     else:
         S = find_S(fun, hatq, hatp, n, args)
-        if S:
-            S = np.reshape(S.x, (K,K))
+        if S is not None:
+            S = np.reshape(S, (K,K))
         else:
             print("No optimum found. Proceeding with initial values.")
             S = np.identity(K)
-        #if inds:
-        #    hatq = subset_inds(hatq, inds)
         res = hatq.dot(S)    
+    # print(f"res = {res}")
+    return res
+
+# After finding the optimal S, we can also report the optimal q for minimizing fun
+# n is the number of trials to find an optimum
+def find_p(fun, hatq, hatp, n=1, args = ()):
+    M = hatp.shape[0]
+    K = hatp.shape[1]
+    # Does the formula apply?
+    if K == 2 and (fun.__name__ == "mean_size" or fun.__name__ == "neg_mean_size"):
+        # We want to minimize/maximize column 0
+        if pop == 1:
+            hatq = hatq[:,[1,0]]
+            hatp = hatp[:,[1,0]]
+        U, u, V, v = get_UuVv(hatp, hatq)
+        # print(f"U = {U}, u = {u}, V = {V}, v = {v}")
+        res1 = hatp[:, 0] * (U)/( U - 1 ) + hatp[:, 1] * ( -1 )/( U - 1 )
+        res2 = hatp[:, 0] * ( -V )/( 1 + V ) + hatp[:, 1] * ( 1 )/( 1 + V )
+        if fun.__name__ == "neg_mean_size":
+            res = np.minimum(res1, res2)
+        else:
+            res = np.maximum(res1, res2)
+        # print(f"res vor b {res}")
+        res = np.vstack([res, 1-res]).T
+        if pop == 1:
+            res = res[1,0]
+        res = np.array(res).reshape(M,K)
+    else:
+        S = find_S(fun, hatq, hatp, n, args)
+        T = np.linalg.pinv(S) # more stable than .inv
+        res = T.dot(hatp.T)
     # print(f"res = {res}")
     return res
 
@@ -315,11 +329,13 @@ if __name__ == "__main__":
     print(f"Minimizing the contribution of population 0 in the first {first} individuals in {default_STRUCTURE_path}:")
     # fun = (lambda x : mean_size(x, hatq, pop, inds))
     print(find_S(mean_size, hatq, hatp, 10, (hatq, pop, inds)))
-    print(find_q(mean_size, hatq, hatp, inds, 10, (hatq, pop, inds)))
+    print(find_q(mean_size, hatq, hatp, 10, (hatq, pop, inds)))
+    print(find_p(mean_size, hatq, hatp, 10, (hatq, pop, inds)))
 
     print(f"Minimizing the entropy in the first {first} individuals in {default_STRUCTURE_path}:")
     # fun = (lambda x : mean_entropy(x, hatq, inds))
-    print(find_q(mean_entropy, hatq, hatp, inds, 10, (hatq, inds)))
+    print(find_q(mean_entropy, hatq, hatp, 10, (hatq, inds)))
+    print(find_p(mean_entropy, hatq, hatp, 10, (hatq, inds)))
     
     print("Generating some random data (with fixed seed) with K=3.")
     # np.random.seed(41)
@@ -340,12 +356,13 @@ if __name__ == "__main__":
     print("Initial IAs:")
     print(hatq[0:9])
     print("Optimized IAs:")
-    print(find_q(neg_mean_size, hatq, hatp, inds, 10, (hatq, pop))[0:9])
+    print(find_q(neg_mean_size, hatq, hatp, 10, (hatq, pop))[0:9])
+    print(find_p(neg_mean_size, hatq, hatp, 10, (hatq, pop))[0:9])
     print("Maximizing the entropy in all individuals:")
     # fun = (lambda x : neg_mean_entropy(x, hatq, pop))
     print("Initial IAs:")
     print(hatq[0:9])
     print("Optimized IAs:")
-    print(find_q(neg_mean_entropy, hatq, hatp, inds, 10, (hatq, pop))[0:9])
-    
+    print(find_p(neg_mean_entropy, hatq, hatp, 10, (hatq, pop))[0:9])
+    print(hatp_dict)
 
