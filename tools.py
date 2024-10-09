@@ -15,6 +15,22 @@ def load_structure_file(path):
     with open(path, 'rb') as f:
         return f.readlines()
 
+def load_structure_file(path):
+    with open(path, 'rb') as f:
+        return f.readlines()
+
+# result is hatq_df
+def load_q_file(path):
+    return pd.read_csv(path, header = None, sep = " ")
+
+# File must only contain bi-allelic marker and report the frequencies of a reference allele
+# This is as in admixture output.
+# result is hatp_dict
+def load_p_file(path):
+    df = pd.read_csv(path, header = None, sep = " ")
+    res = { i : np.vstack([df.iloc[i,], 1-df.iloc[i,]]) for i in range(len(df[0]))}
+    return res
+
 # Determine K from the structure File    
 def get_K(structure_file):
     output_text = ''.join([line.decode('utf-8') for line in structure_file])
@@ -352,6 +368,7 @@ if __name__ == "__main__":
     # print(lines)
     hatp_dict = get_p(lines)    
     # print(hatp_df)
+    #print(hatp_dict)
     hatp_df = to_df(hatp_dict)
     hatp = np.array(hatp_df)
     K = get_K(lines)
@@ -361,16 +378,37 @@ if __name__ == "__main__":
     inds = [1 if i < first else 0 for i in range(N)]
     print(f"Minimizing the contribution of population 0 in the first {first} individuals in {default_STRUCTURE_path}:")
     # fun = (lambda x : mean_size(x, hatq, pop, inds))
+    #print(find_S(mean_size, hatq, hatp, 10, (hatq, pop, inds), mean_size_jac))
+    print("\n\n")
+    #print(find_q(mean_size, hatq, hatp, 10, (hatq, pop, inds), mean_size_jac))
+    #print(find_p(mean_size, hatq, hatp, 10, (hatq, pop, inds), mean_size_jac))
+
+    #print(f"Minimizing the entropy in the first {first} individuals in {default_STRUCTURE_path}:")
+    # fun = (lambda x : mean_entropy(x, hatq, inds))
+    #print(find_q(mean_entropy, hatq, hatp, 10, (hatq, inds), mean_entropy_jac))
+    #print(find_p(mean_entropy, hatq, hatp, 10, (hatq, inds), mean_entropy_jac))
+
+    default_p_path = 'Example_Input/ET_trainingdata.5.P'
+    default_q_path = 'Example_Input/ET_trainingdata.5.Q'
+    
+    hatq = load_q_file(default_q_path)
+    hatp_dict = load_p_file(default_p_path)
+    print("hatp_dict = ", hatp_dict)
+    hatp_df = to_df(hatp_dict)
+    print(hatp_df)
+    hatp = np.array(hatp_df)
+    K = get_K(lines)
+    N = hatq.shape[0]
+    pop = 2
+    first = 9
+    inds = [1 if i < first else 0 for i in range(N)]
+    print(f"Minimizing the contribution of population 2 in the first {first} individuals in {default_q_path}:")
+    # fun = (lambda x : mean_size(x, hatq, pop, inds))
     print(find_S(mean_size, hatq, hatp, 10, (hatq, pop, inds), mean_size_jac))
     print("\n\n")
     print(find_q(mean_size, hatq, hatp, 10, (hatq, pop, inds), mean_size_jac))
     print(find_p(mean_size, hatq, hatp, 10, (hatq, pop, inds), mean_size_jac))
 
-    print(f"Minimizing the entropy in the first {first} individuals in {default_STRUCTURE_path}:")
-    # fun = (lambda x : mean_entropy(x, hatq, inds))
-    print(find_q(mean_entropy, hatq, hatp, 10, (hatq, inds), mean_entropy_jac))
-    print(find_p(mean_entropy, hatq, hatp, 10, (hatq, inds), mean_entropy_jac))
-    
     print("Generating some random data (with fixed seed) with K=3.")
     # np.random.seed(41)
     inds = None
@@ -397,6 +435,6 @@ if __name__ == "__main__":
     print("Initial IAs:")
     print(hatq[0:9])
     print("Optimized IAs:")
-    print(find_p(neg_mean_entropy, hatq, hatp, 10, (hatq, pop), neg_mean_entropy_jac)[0:9])
+    print(find_p(neg_mean_entropy, hatq, hatp, 10, (hatq, inds), neg_mean_entropy_jac)[0:9])
     print(hatp_dict)
 

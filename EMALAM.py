@@ -59,6 +59,15 @@ default_structure_path_K3_url = "https://github.com/CarolaHeinzel/Flat-Likelihoo
 default_structure_path_K2 = 'Example_Input/CEU_IBS_TSI_enhanced_corr_f'
 default_structure_path_K2_url = "https://github.com/CarolaHeinzel/Flat-Likelihood-in-the-Admixture-Model/blob/main/Example_Input/CEU_IBS_TSI_enhanced_corr_f"
 
+#default_q_path = 'Example_Input/ET_trainingdata.5.Q'
+#default_p_path = 'Example_Input/ET_trainingdata.5.P'
+#default_q_path_url = "https://github.com/CarolaHeinzel/Flat-Likelihood-in-the-Admixture-Model/blob/main/Example_Input/ET_trainingdata.5.Q"
+#default_p_path_url = "https://github.com/CarolaHeinzel/Flat-Likelihood-in-the-Admixture-Model/blob/main/Example_Input/ET_trainingdata.5.P"
+default_q_path = 'Example_Input/q_K3'
+default_p_path = 'Example_Input/p_K3'
+default_q_path_url = "https://github.com/CarolaHeinzel/Flat-Likelihood-in-the-Admixture-Model/blob/main/Example_Input/q_K3"
+default_p_path_url = "https://github.com/CarolaHeinzel/Flat-Likelihood-in-the-Admixture-Model/blob/main/Example_Input/p_K3"
+
 n = 10 # number of trials for optimization
 
 st.set_page_config(page_title="EMALAM", page_icon=None, layout="wide", initial_sidebar_state="auto", menu_items=None)
@@ -99,9 +108,9 @@ st.write("See xxx biorxiv for a reference what this webpage is about.")
 # At the end of this section, we have hatq and hatp
 
 default_options = [
-    f"Example with K=3 [STRUCTURE output data]({default_structure_path_K3_url})", 
+    f"Example with K=3 [STRUCTURE output data]({default_structure_path_K3_url})",
     f"Example with K=2 [STRUCTURE output data]({default_structure_path_K2_url})",
-    #"Example [p- and q-matrizes](github.com)", 
+    f"Example ADMIXTURE output data [Q]({default_q_path_url}) and [P]({default_p_path_url})", 
     "Upload data"]
 default = st.radio(
     "Which file(s) should be used?",
@@ -112,20 +121,22 @@ default = st.radio(
 if default == default_options[0]:
     use_structure_file = True
     lines = tools.load_structure_file(default_structure_path_K3)
+
+
 if default == default_options[1]:
     use_structure_file = True
     lines = tools.load_structure_file(default_structure_path_K2)
 if default == default_options[2]:
-#    use_structure_file = False
-#    st.write("Sorry, no implementation yet!")
-#if default == default_options[3]:
-    data_type_options = ["STRUCTURE Output", "Other"]
+    use_structure_file = False
+    st.session_state.uploaded_q_file = default_q_path
+    st.session_state.uploaded_p_file = default_p_path
+if default == default_options[3]:
+    data_type_options = ["STRUCTURE output (single file)", "Admixture output (Q and P files)"]
     data_type = st.selectbox(
         "Select the type of input data:",
         options=data_type_options,  # Add other options as needed
         index=0  # Set the default selected option to "STRUCTURE"
-    )
-    
+    )    
     # File uploaders based on input type
     if data_type == data_type_options[0]:
         use_structure_file = True
@@ -135,30 +146,33 @@ if default == default_options[2]:
         
     else:
         use_structure_file = False
-        col1, col2, col3 = st.columns([1,1,1])
-        st.session_state.uploaded_q_file = col1.file_uploader("STRUCTURE output file for individual ancestries (q)")
-        st.session_state.uploaded_p_file = col2.file_uploader("STRUCTURE output file for allele frequencies (p)")
-        st.session_state.uploaded_pJ_file = col3.file_uploader("STRUCTURE output file for allele frequencies (p) for J >= 3")
-        st.write("Sorry, no implementation yet!")
-        lines = None
-    
-if lines is not None:
-    hatq_dict = tools.get_q(lines)
-    hatq_df = tools.to_df(hatq_dict)
-    st.session_state.hatq = np.array(hatq_df)
-    st.session_state.ind_ids = hatq_dict.keys()
+        col0, col1 = st.columns([1,1])
+        st.session_state.uploaded_q_file = col0.file_uploader("ADMIXTURE output file for individual ancestries (Q)")
+        st.session_state.uploaded_p_file = col1.file_uploader("ADMIXTURE output file for allele frequencies (P)")
 
-    hatp_dict = tools.get_p(lines)
+cont = (use_structure_file and lines is not None) or (not use_structure_file and st.session_state.uploaded_q_file is not None and st.session_state.uploaded_p_file is not None)
+
+if cont:
+    if use_structure_file:
+        hatq_dict = tools.get_q(lines)
+        hatq_df = tools.to_df(hatq_dict)
+        st.session_state.hatq = np.array(hatq_df)
+        st.session_state.ind_ids = hatq_dict.keys()
+        hatp_dict = tools.get_p(lines)    
+    else:
+        st.session_state.hatq = np.array(tools.load_q_file(st.session_state.uploaded_q_file))
+        st.session_state.ind_ids = range(st.session_state.hatq.shape[0])
+        hatp_dict = tools.load_p_file(st.session_state.uploaded_p_file)
+
     hatp_df = tools.to_df(hatp_dict)
     hatp = np.array(hatp_df)
     st.session_state.hatp = np.array(hatp_df)
-
 
 ############################
 ## Choose target function ##
 ############################
 
-if lines is not None:
+if cont: #lines is not None:
     st.write("### Selection of target function for optimization")
     st.write("What should be done?")
     
@@ -197,7 +211,7 @@ if lines is not None:
 ## Run optimizer ##    
 ###################
 
-if lines is not None:
+if cont: # lines is not None:
     hatq = st.session_state.hatq
     hatp = st.session_state.hatp
     inds = st.session_state.inds
