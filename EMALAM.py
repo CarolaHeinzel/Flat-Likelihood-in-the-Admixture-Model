@@ -21,13 +21,15 @@ def plot_q_all(q):
         color=alt.Color('pop:N', scale=alt.Scale(scheme='category10')),
         tooltip=['pop:N', 'ia:Q']  
     ).properties(), use_container_width=True)
+    pivot_df = q_df.pivot(index='ind', columns='pop', values='ia')
+    return pivot_df
 
 def plot_p_all(hatp_dict):
     first_key = next(iter(hatp_dict))  # Erster Key
     first_value = hatp_dict[first_key]  # Erster Value
     K = first_value.shape[1]
+    marker = []
     for k in range(K):
-        marker = []
         for key, value in hatp_dict.items():
             J = value.shape[0]
             if J > 1:
@@ -35,17 +37,22 @@ def plot_p_all(hatp_dict):
                     marker.append({
                         "id": key,
                         "p": hatp_dict[key][j,k],
-                        "allele": j
+                        "allele": j,
+                        "pop": k,
+                        "id.allele": f"{key}.{j}"
                     })
-        p_df  = pd.DataFrame(marker)
+    p_df  = pd.DataFrame(marker)
+    # st.write(p_df)
+    for k in range(K):
         st.write(f"Population {k}")
-        st.altair_chart(alt.Chart(p_df).mark_bar().encode(
+        st.altair_chart(alt.Chart(p_df[p_df["pop"] == k]).mark_bar().encode(
             x=alt.X("id:N", title=""),
             y=alt.Y("p:Q", sort = 'descending', title=""),
             color=alt.Color('allele:N', scale=alt.Scale(scheme='category10')),
             tooltip=['marker:N', 'allele:N', 'p:Q']  
         ).properties(), use_container_width=True)
-
+    pivot_df = p_df.pivot(index='id.allele', columns='pop', values='p')
+    return pivot_df
 
 default_structure_path_K3 = 'Example_Input/CEU_IBS_TSI_enhanced_corr_K3_f'
 default_structure_path_K3_url = "https://github.com/CarolaHeinzel/Flat-Likelihood-in-the-Admixture-Model/blob/main/Example_Input/CEU_IBS_TSI_enhanced_corr_K3_f"
@@ -63,8 +70,6 @@ if "uploaded_q_file" not in st.session_state:
     st.session_state.uploaded_q_file = None
 if "uploaded_p_file" not in st.session_state:
     st.session_state.uploaded_p_file = None
-if "uploaded_pJ_file" not in st.session_state:
-    st.session_state.uploaded_pJ_file = None
 if "poss" not in st.session_state:
     st.session_state.poss = "P4" # Initial Value
 if "data_uploaded" not in st.session_state:
@@ -209,15 +214,15 @@ if lines is not None:
              notall = False
         with st.spinner('The computer is calculating...'):
             if target == target_options[0]:
-                S_min = tools.find_S(tools.mean_entropy, hatq, hatp, n, (hatq, inds))
-                S_max = tools.find_S(tools.neg_mean_entropy, hatq, hatp, n, (hatq, inds)) 
-                #q_min = tools.find_q(tools.mean_entropy, hatq, hatp, n, (hatq, inds))
-                #q_max = tools.find_q(tools.neg_mean_entropy, hatq, hatp, n, (hatq, inds)) 
+                S_min = tools.find_S(tools.mean_entropy, hatq, hatp, n, (hatq, inds), tools.mean_entropy_jac)
+                S_max = tools.find_S(tools.neg_mean_entropy, hatq, hatp, n, (hatq, inds), tools.neg_mean_entropy_jac) 
+                #q_min = tools.find_q(tools.mean_entropy, hatq, hatp, n, (hatq, inds), tools.mean_entropy_jac)
+                #q_max = tools.find_q(tools.neg_mean_entropy, hatq, hatp, n, (hatq, inds), tools.neg_mean_entropy_jac) 
             else:
-                S_min = tools.find_S(tools.mean_size, hatq, hatp, n, (hatq, popl, inds))
-                S_max = tools.find_S(tools.neg_mean_size, hatq, hatp, n, (hatq, popl, inds))
-                #q_min = tools.find_q(tools.mean_size, hatq, hatp, n, (hatq, popl, inds))
-                #q_max = tools.find_q(tools.neg_mean_size, hatq, hatp, n, (hatq, popl, inds))
+                S_min = tools.find_S(tools.mean_size, hatq, hatp, n, (hatq, popl, inds), tools.mean_size_jac)
+                S_max = tools.find_S(tools.neg_mean_size, hatq, hatp, n, (hatq, popl, inds), tools.neg_mean_size_jac)
+                #q_min = tools.find_q(tools.mean_size, hatq, hatp, n, (hatq, popl, inds), tools.mean_size_jac)
+                #q_max = tools.find_q(tools.neg_mean_size, hatq, hatp, n, (hatq, popl, inds), tools.neg_mean_size_jac)
             q_min = hatq.dot(S_min)
             q_max = hatq.dot(S_max)
 
@@ -247,27 +252,48 @@ if lines is not None:
                 st.write("## Individual admixtures of all individuals")
                 st.write(f"N = {N}, K = {K}, M = {M}")
                 st.write("#### Initial values")
-                plot_q_all(hatq)
+                col0, col1 = st.columns([10,2])
+                with col0:
+                    hatq_pivot = plot_q_all(hatq)
+                with col1:
+                    st.write(hatq_pivot)
                 st.write("#### Minimum")
-                plot_q_all(q_min)
+                col0, col1 = st.columns([10,2])
+                with col0:
+                    hatq_pivot = plot_q_all(q_min)
+                with col1:
+                    st.write(hatq_pivot)
                 st.write("#### Maximum")
-                plot_q_all(q_max)
+                col0, col1 = st.columns([10,2])
+                with col0:
+                    hatq_pivot = plot_q_all(q_max)
+                with col1:
+                    st.write(hatq_pivot)
+
         if showp:
             with st.expander("Allele frequencies at all markers"):
-                st.write("#### Initial values")
-                plot_p_all(hatp_dict)
-                min_p_dict = max_p_dict = hatp_dict
                 T_min = np.linalg.pinv(S_min)
                 T_max = np.linalg.pinv(S_max)
                 p_min_dict = { key: value.dot(T_min.T) for key, value in hatp_dict.items() } 
                 p_max_dict = { key: value.dot(T_max.T) for key, value in hatp_dict.items() } 
+
+                st.write("#### Initial values")
+                col0, col1 = st.columns([10,2])
+                with col0:
+                    hatp_pivot = plot_p_all(hatp_dict)
+                with col1:
+                    st.write(hatp_pivot)
                 st.write("#### p for minimal target function")
-                plot_p_all(p_min_dict)
+                col0, col1 = st.columns([10,2])
+                with col0:
+                    hatp_pivot = plot_p_all(p_min_dict)
+                with col1:
+                    st.write(hatp_pivot)
                 st.write("#### p for maximal target function")
-                plot_p_all(p_max_dict)
-
-                
-#       
-
+                col0, col1 = st.columns([10,2])
+                with col0:
+                    hatp_pivot = plot_p_all(p_max_dict)
+                with col1:
+                    st.write(hatp_pivot)
 
 

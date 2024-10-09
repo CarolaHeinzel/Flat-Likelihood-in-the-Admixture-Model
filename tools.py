@@ -1,6 +1,5 @@
 # TODOs
 # make Download of q and p possible
-# Jacobi Matrix für Optimierung angeben
 
 import numpy as np
 import pandas as pd
@@ -348,6 +347,7 @@ if __name__ == "__main__":
     lines = load_structure_file(default_STRUCTURE_path)
     hatq_dict = get_q(lines)
     hatq_df = to_df(hatq_dict)
+    
     hatq = np.array(hatq_df)
     # print(lines)
     hatp_dict = get_p(lines)    
