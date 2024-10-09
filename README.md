@@ -1,6 +1,19 @@
+# Usage
+
+After installing dependencies using `pip install -r requirements.txt`, either use the command line tool, e.g.
+```
+python emalam.py --structure_filename Example_Input/CEU_IBS_TSI_enhanced_corr_K3_f --out out.txt out.json --fun entropy --min 
+```
+or the graphical version
+```
+streamlit run EMALAM.py
+```
+which is displayed in your browser. Another online version is available under xxx.
+
+
 # Flat-Likelihood-in-the-Admixture-Model
 
-We briefly describe how to apply EMALAM. For detailed information, please read the documentation.<br>
+We briefly describe how to apply emalam. For detailed information, please read the documentation.<br>
 # Files in the Repository
 
 This repository contains <br>

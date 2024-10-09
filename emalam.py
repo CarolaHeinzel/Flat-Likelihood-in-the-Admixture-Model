@@ -1,11 +1,8 @@
-# TODOs
-# make Download of q and p possible
-
 import numpy as np
 import pandas as pd
 from scipy.stats import entropy
 from scipy.optimize import minimize, LinearConstraint, NonlinearConstraint
-import re
+import re, json, argparse
 
 #################################################
 ## Importing data from a structure output file ## 
@@ -255,7 +252,7 @@ def find_S(fun, hatq, hatp, n = 1, args = (), jac = None):
     # All entries in S cannot be smaller than -1 or larger than 1
     if K == 2 and (fun.__name__ == "mean_size" or fun.__name__ == "neg_mean_size"): 
         U, u, V, v = get_UuVv(hatp, hatq)
-        print(f"U = {U}, u = {u}, V = {V}, v = {v}")
+        # print(f"U = {U}, u = {u}, V = {V}, v = {v}")
         if fun.__name__ == "mean_size":
             a = (1 + v) / (U + v)
             b = (1 - U) / (1 + U / v)
@@ -287,7 +284,7 @@ def find_S(fun, hatq, hatp, n = 1, args = (), jac = None):
                     best = res
             if best:
                 best = np.reshape(best.x, (K,K))
-            print(best)
+            # print(best)
     return np.array(best)
 
 # After finding the optimal S, we can also report the optimal q for minimizing fun
@@ -298,7 +295,7 @@ def find_q(fun, hatq, hatp, n=1, args = (), jac = None):
     # Does the formula apply?
     if K == 2 and (fun.__name__ == "mean_size" or fun.__name__ == "neg_mean_size"):
         # We want to minimize/maximize column 0
-        if pop == 1:
+        if args[1] == 1:
             hatq = hatq[:,[1,0]]
             hatp = hatp[:,[1,0]]
         U, u, V, v = get_UuVv(hatp, hatq)
@@ -309,7 +306,7 @@ def find_q(fun, hatq, hatp, n=1, args = (), jac = None):
             res = hatq[:, 0] * (U - 1)/(U - v) + hatq[:, 1] * (1 - U)/(1 + U / v)
         # print(f"res vor b {res}")
         res = np.vstack([res, 1-res]).T
-        if pop == 1:
+        if args[1] == 1:
             res = res[1,0]
         res = np.array(res).reshape(N,K)
     else:
@@ -331,7 +328,7 @@ def find_p(fun, hatq, hatp, n=1, args = (), jac = None):
     # Does the formula apply?
     if K == 2 and (fun.__name__ == "mean_size" or fun.__name__ == "neg_mean_size"):
         # We want to minimize/maximize column 0
-        if pop == 1:
+        if args[1] == 1:
             hatq = hatq[:,[1,0]]
             hatp = hatp[:,[1,0]]
         U, u, V, v = get_UuVv(hatp, hatq)
@@ -344,7 +341,7 @@ def find_p(fun, hatq, hatp, n=1, args = (), jac = None):
             res = np.maximum(res1, res2)
         # print(f"res vor b {res}")
         res = np.vstack([res, 1-res]).T
-        if pop == 1:
+        if args[1] == 1:
             res = res[1,0]
         res = np.array(res).reshape(M,K)
     else:
@@ -354,87 +351,72 @@ def find_p(fun, hatq, hatp, n=1, args = (), jac = None):
     # print(f"res = {res}")
     return res
 
-# Some tests
+# Command line tool
+# example
+# python emalam.py --structure_filename Example_Input/CEU_IBS_TSI_enhanced_corr_K3_f --out out.txt out.json --fun entropy --min 
+
 if __name__ == "__main__":
-    np.random.seed(19)
-#    default_STRUCTURE_path = 'Example_Input/output_structure_f'
-    default_STRUCTURE_path = 'Example_Input/CEU_IBS_TSI_enhanced_corr_K3_f'
-#    default_STRUCTURE_path = 'Example_Input/output_structure_K3_not_biallelic_f'
-    lines = load_structure_file(default_STRUCTURE_path)
-    hatq_dict = get_q(lines)
-    hatq_df = to_df(hatq_dict)
-    
-    hatq = np.array(hatq_df)
-    # print(lines)
-    hatp_dict = get_p(lines)    
-    # print(hatp_df)
-    #print(hatp_dict)
+    parser = argparse.ArgumentParser(description="Process input file names.")
+    parser.add_argument("--hatq_filename", type=str, help="The input file name for hatq")
+    parser.add_argument("--hatp_filename", type=str, help="The input file name for hatp")
+    parser.add_argument("--structure_filename", type=str, help="The input file name for structure data")
+    parser.add_argument("--out", nargs = 2, type=str, help="The output filenames for the optimized parameters. (Q is a csv, P is a json.)")
+    parser.add_argument("--fun", type=str, help="The target function to optimize, must be entropy or size", default = "entropy")
+    parser.add_argument("--pop", type=str, help="If fun == size, the number of the population which is to be optimized.")
+    parser.add_argument("--min", action='store_true', help="The target function is minimized.")
+    parser.add_argument("--max", action='store_true', help="The target function is maximized.")
+    parser.add_argument("--n", type=str, help="Number of iterations for the optimization.", default = 1)
+    parser.add_argument("--inds", nargs = '+', type=str, help="The individuals which are used for the target function. If missing, optimization is over all individuals.")
+
+    args = parser.parse_args()
+
+    if not ((args.hatq_filename and args.hatp_filename) or args.structure_filename):
+        raise ValueError("Either, structure_filename, or hatq_filename and hatp_filename must be given.")
+    if args.structure_filename:
+        lines = load_structure_file(args.structure_filename)
+        hatq_dict = get_q(lines)
+        hatq_df = to_df(hatq_dict)
+        hatq = np.array(hatq_df)
+        ind_ids = hatq_dict.keys()
+        hatp_dict = get_p(lines)
+    else:
+        hatq = np.array(load_q_file(args.hatq_filename))
+        ind_ids = range(hatq.shape[0])
+        hatp_dict = load_p_file(args.hatp_filename)
+
     hatp_df = to_df(hatp_dict)
     hatp = np.array(hatp_df)
-    K = get_K(lines)
-    N = hatq.shape[0]
-    pop = 0
-    first = 9
-    inds = [1 if i < first else 0 for i in range(N)]
-    print(f"Minimizing the contribution of population 0 in the first {first} individuals in {default_STRUCTURE_path}:")
-    # fun = (lambda x : mean_size(x, hatq, pop, inds))
-    #print(find_S(mean_size, hatq, hatp, 10, (hatq, pop, inds), mean_size_jac))
-    print("\n\n")
-    #print(find_q(mean_size, hatq, hatp, 10, (hatq, pop, inds), mean_size_jac))
-    #print(find_p(mean_size, hatq, hatp, 10, (hatq, pop, inds), mean_size_jac))
-
-    #print(f"Minimizing the entropy in the first {first} individuals in {default_STRUCTURE_path}:")
-    # fun = (lambda x : mean_entropy(x, hatq, inds))
-    #print(find_q(mean_entropy, hatq, hatp, 10, (hatq, inds), mean_entropy_jac))
-    #print(find_p(mean_entropy, hatq, hatp, 10, (hatq, inds), mean_entropy_jac))
-
-    default_p_path = 'Example_Input/ET_trainingdata.5.P'
-    default_q_path = 'Example_Input/ET_trainingdata.5.Q'
     
-    hatq = load_q_file(default_q_path)
-    hatp_dict = load_p_file(default_p_path)
-    print("hatp_dict = ", hatp_dict)
-    hatp_df = to_df(hatp_dict)
-    print(hatp_df)
-    hatp = np.array(hatp_df)
-    K = get_K(lines)
-    N = hatq.shape[0]
-    pop = 2
-    first = 9
-    inds = [1 if i < first else 0 for i in range(N)]
-    print(f"Minimizing the contribution of population 2 in the first {first} individuals in {default_q_path}:")
-    # fun = (lambda x : mean_size(x, hatq, pop, inds))
-    print(find_S(mean_size, hatq, hatp, 10, (hatq, pop, inds), mean_size_jac))
-    print("\n\n")
-    print(find_q(mean_size, hatq, hatp, 10, (hatq, pop, inds), mean_size_jac))
-    print(find_p(mean_size, hatq, hatp, 10, (hatq, pop, inds), mean_size_jac))
+    if args.min and args.max:
+        raise ValueError("min and max must not be True simultaneously. ")
+    if args.fun == "entropy":
+        if args.min:
+            f = {"fun": mean_entropy, "jac": mean_entropy_jac}
+        elif args.max:
+            f = {"fun": neg_mean_entropy, "jac": neg_mean_entropy_jac}
+    elif args.fun == "size":
+        if args.min:
+            f = {"fun": mean_size, "jac": mean_size_jac}
+        elif args.max:
+            f = {"fun": neg_mean_size, "jac": neg_mean_size_jac}
+    else:
+        raise ValueError("fun must be 'entropy' or 'size'.")        
+    
+    if args.inds:
+        wrong_inds = [id for id in args.names if id not in ind_ids]
+        if wrong_inds:
+            print(f"Warning: Individuals {wrong_inds} not in input file(s).")
+        inds = [id in args.names for id in ind_ids]
+    else:
+        inds = None
 
-    print("Generating some random data (with fixed seed) with K=3.")
-    # np.random.seed(41)
-    inds = None
-    hatq1 = np.random.uniform(0.2, 0.8, size=(1000, 1)) 
-    hatq2 = np.random.uniform(0.2, 0.8, size=(1000, 1)) 
-    a = np.minimum(hatq1, hatq2)
-    b = np.maximum(hatq1, hatq2)
-    hatq = np.hstack([a, b-a, 1-b])
-    print("hatq.T:")
-    print(hatq.T)
-    print("hatp.T:")
-    hatp = array = np.random.uniform(0.3, 0.7, size=(200, 3)) 
-    print(hatp.T)
+    S_opt = find_S(f["fun"], hatq, hatp, args.n, (hatq, inds), f["jac"])
+    q_opt = hatq.dot(S_opt)
+    T_opt = np.linalg.pinv(S_opt)
+    p_opt_dict = { key: pd.DataFrame(value.dot(T_opt.T)).to_json() for key, value in hatp_dict.items() } 
 
-    print("Maximizing the contribution of population 0 in all individuals:")
-    # fun = (lambda x : -mean_size(x, hatq, pop))
-    print("Initial IAs:")
-    print(hatq[0:9])
-    print("Optimized IAs:")
-    print(find_q(neg_mean_size, hatq, hatp, 10, (hatq, pop), neg_mean_size_jac)[0:9])
-    print(find_p(neg_mean_size, hatq, hatp, 10, (hatq, pop), neg_mean_size_jac)[0:9])
-    print("Maximizing the entropy in all individuals:")
-    # fun = (lambda x : neg_mean_entropy(x, hatq, pop))
-    print("Initial IAs:")
-    print(hatq[0:9])
-    print("Optimized IAs:")
-    print(find_p(neg_mean_entropy, hatq, hatp, 10, (hatq, inds), neg_mean_entropy_jac)[0:9])
-    print(hatp_dict)
+    np.savetxt(args.out[0], q_opt, delimiter=' ')
+    with open(args.out[1], 'w') as p_file:
+        json.dump(p_opt_dict, p_file, indent=4)
+
 

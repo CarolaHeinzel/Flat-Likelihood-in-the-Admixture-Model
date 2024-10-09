@@ -177,3 +177,87 @@
     	with st.expander(f'Marker Names and Individual Names '):
 
                 st.write(marker_names, individual_names)
+
+
+    np.random.seed(19)
+#    default_STRUCTURE_path = 'Example_Input/output_structure_f'
+    default_STRUCTURE_path = 'Example_Input/CEU_IBS_TSI_enhanced_corr_K3_f'
+#    default_STRUCTURE_path = 'Example_Input/output_structure_K3_not_biallelic_f'
+    lines = load_structure_file(default_STRUCTURE_path)
+    hatq_dict = get_q(lines)
+    hatq_df = to_df(hatq_dict)
+    
+    hatq = np.array(hatq_df)
+    # print(lines)
+    hatp_dict = get_p(lines)    
+    # print(hatp_df)
+    #print(hatp_dict)
+    hatp_df = to_df(hatp_dict)
+    hatp = np.array(hatp_df)
+    K = get_K(lines)
+    N = hatq.shape[0]
+    pop = 0
+    first = 9
+    inds = [1 if i < first else 0 for i in range(N)]
+    print(f"Minimizing the contribution of population 0 in the first {first} individuals in {default_STRUCTURE_path}:")
+    # fun = (lambda x : mean_size(x, hatq, pop, inds))
+    #print(find_S(mean_size, hatq, hatp, 10, (hatq, pop, inds), mean_size_jac))
+    print("\n\n")
+    #print(find_q(mean_size, hatq, hatp, 10, (hatq, pop, inds), mean_size_jac))
+    #print(find_p(mean_size, hatq, hatp, 10, (hatq, pop, inds), mean_size_jac))
+
+    #print(f"Minimizing the entropy in the first {first} individuals in {default_STRUCTURE_path}:")
+    # fun = (lambda x : mean_entropy(x, hatq, inds))
+    #print(find_q(mean_entropy, hatq, hatp, 10, (hatq, inds), mean_entropy_jac))
+    #print(find_p(mean_entropy, hatq, hatp, 10, (hatq, inds), mean_entropy_jac))
+
+    default_p_path = 'Example_Input/ET_trainingdata.5.P'
+    default_q_path = 'Example_Input/ET_trainingdata.5.Q'
+    
+    hatq = load_q_file(default_q_path)
+    hatp_dict = load_p_file(default_p_path)
+    print("hatp_dict = ", hatp_dict)
+    hatp_df = to_df(hatp_dict)
+    print(hatp_df)
+    hatp = np.array(hatp_df)
+    K = get_K(lines)
+    N = hatq.shape[0]
+    pop = 2
+    first = 9
+    inds = [1 if i < first else 0 for i in range(N)]
+    print(f"Minimizing the contribution of population 2 in the first {first} individuals in {default_q_path}:")
+    # fun = (lambda x : mean_size(x, hatq, pop, inds))
+    print(find_S(mean_size, hatq, hatp, 10, (hatq, pop, inds), mean_size_jac))
+    print("\n\n")
+    print(find_q(mean_size, hatq, hatp, 10, (hatq, pop, inds), mean_size_jac))
+    print(find_p(mean_size, hatq, hatp, 10, (hatq, pop, inds), mean_size_jac))
+
+    print("Generating some random data (with fixed seed) with K=3.")
+    # np.random.seed(41)
+    inds = None
+    hatq1 = np.random.uniform(0.2, 0.8, size=(1000, 1)) 
+    hatq2 = np.random.uniform(0.2, 0.8, size=(1000, 1)) 
+    a = np.minimum(hatq1, hatq2)
+    b = np.maximum(hatq1, hatq2)
+    hatq = np.hstack([a, b-a, 1-b])
+    print("hatq.T:")
+    print(hatq.T)
+    print("hatp.T:")
+    hatp = array = np.random.uniform(0.3, 0.7, size=(200, 3)) 
+    print(hatp.T)
+
+    print("Maximizing the contribution of population 0 in all individuals:")
+    # fun = (lambda x : -mean_size(x, hatq, pop))
+    print("Initial IAs:")
+    print(hatq[0:9])
+    print("Optimized IAs:")
+    print(find_q(neg_mean_size, hatq, hatp, 10, (hatq, pop), neg_mean_size_jac)[0:9])
+    print(find_p(neg_mean_size, hatq, hatp, 10, (hatq, pop), neg_mean_size_jac)[0:9])
+    print("Maximizing the entropy in all individuals:")
+    # fun = (lambda x : neg_mean_entropy(x, hatq, pop))
+    print("Initial IAs:")
+    print(hatq[0:9])
+    print("Optimized IAs:")
+    print(find_p(neg_mean_entropy, hatq, hatp, 10, (hatq, inds), neg_mean_entropy_jac)[0:9])
+    print(hatp_dict)
+

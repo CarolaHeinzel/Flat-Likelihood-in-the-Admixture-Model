@@ -2,10 +2,7 @@ import streamlit as st
 import numpy as np
 import altair as alt
 import pandas as pd
-# import plotly.express as px
-import matplotlib.pyplot as plt
-
-import tools 
+import emalam as em
 
 def plot_q_all(q):
     N = q.shape[0]
@@ -59,14 +56,10 @@ default_structure_path_K3_url = "https://github.com/CarolaHeinzel/Flat-Likelihoo
 default_structure_path_K2 = 'Example_Input/CEU_IBS_TSI_enhanced_corr_f'
 default_structure_path_K2_url = "https://github.com/CarolaHeinzel/Flat-Likelihood-in-the-Admixture-Model/blob/main/Example_Input/CEU_IBS_TSI_enhanced_corr_f"
 
-#default_q_path = 'Example_Input/ET_trainingdata.5.Q'
-#default_p_path = 'Example_Input/ET_trainingdata.5.P'
-#default_q_path_url = "https://github.com/CarolaHeinzel/Flat-Likelihood-in-the-Admixture-Model/blob/main/Example_Input/ET_trainingdata.5.Q"
-#default_p_path_url = "https://github.com/CarolaHeinzel/Flat-Likelihood-in-the-Admixture-Model/blob/main/Example_Input/ET_trainingdata.5.P"
-default_q_path = 'Example_Input/q_K3'
-default_p_path = 'Example_Input/p_K3'
-default_q_path_url = "https://github.com/CarolaHeinzel/Flat-Likelihood-in-the-Admixture-Model/blob/main/Example_Input/q_K3"
-default_p_path_url = "https://github.com/CarolaHeinzel/Flat-Likelihood-in-the-Admixture-Model/blob/main/Example_Input/p_K3"
+default_q_path = 'Example_Input/q_CEU_IBS_TSI_K3'
+default_p_path = 'Example_Input/p_CEU_IBS_TSI_K3'
+default_q_path_url = "https://github.com/CarolaHeinzel/Flat-Likelihood-in-the-Admixture-Model/blob/main/Example_Input/q_CEU_IBS_TSI_K3"
+default_p_path_url = "https://github.com/CarolaHeinzel/Flat-Likelihood-in-the-Admixture-Model/blob/main/Example_Input/p_CEU_IBS_TSI_K3"
 
 n = 10 # number of trials for optimization
 
@@ -120,12 +113,12 @@ default = st.radio(
 
 if default == default_options[0]:
     use_structure_file = True
-    lines = tools.load_structure_file(default_structure_path_K3)
+    lines = em.load_structure_file(default_structure_path_K3)
 
 
 if default == default_options[1]:
     use_structure_file = True
-    lines = tools.load_structure_file(default_structure_path_K2)
+    lines = em.load_structure_file(default_structure_path_K2)
 if default == default_options[2]:
     use_structure_file = False
     st.session_state.uploaded_q_file = default_q_path
@@ -154,17 +147,17 @@ cont = (use_structure_file and lines is not None) or (not use_structure_file and
 
 if cont:
     if use_structure_file:
-        hatq_dict = tools.get_q(lines)
-        hatq_df = tools.to_df(hatq_dict)
+        hatq_dict = em.get_q(lines)
+        hatq_df = em.to_df(hatq_dict)
         st.session_state.hatq = np.array(hatq_df)
         st.session_state.ind_ids = hatq_dict.keys()
-        hatp_dict = tools.get_p(lines)    
+        hatp_dict = em.get_p(lines)    
     else:
-        st.session_state.hatq = np.array(tools.load_q_file(st.session_state.uploaded_q_file))
+        st.session_state.hatq = np.array(em.load_q_file(st.session_state.uploaded_q_file))
         st.session_state.ind_ids = range(st.session_state.hatq.shape[0])
-        hatp_dict = tools.load_p_file(st.session_state.uploaded_p_file)
+        hatp_dict = em.load_p_file(st.session_state.uploaded_p_file)
 
-    hatp_df = tools.to_df(hatp_dict)
+    hatp_df = em.to_df(hatp_dict)
     hatp = np.array(hatp_df)
     st.session_state.hatp = np.array(hatp_df)
 
@@ -228,17 +221,21 @@ if cont: # lines is not None:
              notall = False
         with st.spinner('The computer is calculating...'):
             if target == target_options[0]:
-                S_min = tools.find_S(tools.mean_entropy, hatq, hatp, n, (hatq, inds), tools.mean_entropy_jac)
-                S_max = tools.find_S(tools.neg_mean_entropy, hatq, hatp, n, (hatq, inds), tools.neg_mean_entropy_jac) 
-                #q_min = tools.find_q(tools.mean_entropy, hatq, hatp, n, (hatq, inds), tools.mean_entropy_jac)
-                #q_max = tools.find_q(tools.neg_mean_entropy, hatq, hatp, n, (hatq, inds), tools.neg_mean_entropy_jac) 
+                S_min = em.find_S(em.mean_entropy, hatq, hatp, n, (hatq, inds), em.mean_entropy_jac)
+                S_max = em.find_S(em.neg_mean_entropy, hatq, hatp, n, (hatq, inds), em.neg_mean_entropy_jac) 
+                #q_min = em.find_q(em.mean_entropy, hatq, hatp, n, (hatq, inds), em.mean_entropy_jac)
+                #q_max = em.find_q(em.neg_mean_entropy, hatq, hatp, n, (hatq, inds), em.neg_mean_entropy_jac) 
             else:
-                S_min = tools.find_S(tools.mean_size, hatq, hatp, n, (hatq, popl, inds), tools.mean_size_jac)
-                S_max = tools.find_S(tools.neg_mean_size, hatq, hatp, n, (hatq, popl, inds), tools.neg_mean_size_jac)
-                #q_min = tools.find_q(tools.mean_size, hatq, hatp, n, (hatq, popl, inds), tools.mean_size_jac)
-                #q_max = tools.find_q(tools.neg_mean_size, hatq, hatp, n, (hatq, popl, inds), tools.neg_mean_size_jac)
+                S_min = em.find_S(em.mean_size, hatq, hatp, n, (hatq, popl, inds), em.mean_size_jac)
+                S_max = em.find_S(em.neg_mean_size, hatq, hatp, n, (hatq, popl, inds), em.neg_mean_size_jac)
+                #q_min = em.find_q(em.mean_size, hatq, hatp, n, (hatq, popl, inds), em.mean_size_jac)
+                #q_max = em.find_q(em.neg_mean_size, hatq, hatp, n, (hatq, popl, inds), em.neg_mean_size_jac)
             q_min = hatq.dot(S_min)
             q_max = hatq.dot(S_max)
+
+        ####################
+        ## Output results ##    
+        ####################
 
         with st.expander("### Range of individual ancestries"):
             if notall:
