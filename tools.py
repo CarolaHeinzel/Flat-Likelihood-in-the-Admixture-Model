@@ -1,5 +1,5 @@
 # TODOs
-# Download of q and p
+# make Download of q and p possible
 # Jacobi Matrix für Optimierung angeben
 
 import numpy as np
@@ -148,6 +148,38 @@ def mean_size(x, hatq, pop, inds = None):
     S = np.reshape(np.array(x), (K,K))
     return np.mean((hatq.dot(S)).T[pop])
 
+## The following five functions are for the Jacobi matrices for the functions we want to optimize.
+
+def entropy_jac(a):
+    return -1 - np.log(np.maximum(a, 1e-12))
+
+def mean_size_jac(x, hatq, pop, inds = None):
+    K = hatq.shape[1]
+    if inds:
+        hatq = subset_inds(hatq, inds)
+    I = hatq.shape[0]
+    Apop = np.array([[1 if i == pop + j*K else 0 for i in range(K*K)] for j in range(K)])
+    return np.ones(I).dot(hatq).dot(Apop) / I
+
+def neg_mean_size_jac(x, hatq, pop, inds = None):
+    return - mean_size_jac(x, hatq, pop, inds)
+
+def mean_entropy_jac(x, hatq, inds = None):
+    K = hatq.shape[1]
+    if inds:
+        hatq = subset_inds(hatq, inds)
+    I = hatq.shape[0]
+    A = { k: np.array([[1 if i == k + j*K else 0 for i in range(K*K)] for j in range(K)]) for k in range(K) }
+    res = 0
+    for i in range(I):
+        for k in range(K):
+            loc = hatq[i,:].dot(A[k])
+            res = res + entropy_jac(loc.dot(x)) * loc
+    return res / I
+
+def neg_mean_entropy_jac(x, hatq, inds = None):
+    return - mean_entropy_jac(x, hatq, inds)
+
 # We need the following two functions for the minimization
 def neg_mean_entropy(x, hatq, inds = None):
     return - mean_entropy(x, hatq, inds)
@@ -201,7 +233,7 @@ def get_UuVv(hatp, hatq):
 # fun = mean_entropy with args = (hatq, inds)
 # fun = neg_mean_entropy with args = (hatq, inds)
 # n is the number of trials, the best is taken
-def find_S(fun, hatq, hatp, n = 1, args = ()):
+def find_S(fun, hatq, hatp, n = 1, args = (), jac = None):
     K = hatq.shape[1]
     if K != hatp.shape[1]:
         raise ValueError("In find_S, hatq and hatp must have the same number of columns")
@@ -231,7 +263,7 @@ def find_S(fun, hatq, hatp, n = 1, args = ()):
             x0 = np.identity(K) #+ x0
             # rows in x0 must be such that the corresponding S has row sum of 1
             x0 = (x0.dot(np.diag([1/z for z in x0.sum(axis=1)]))).flatten()
-            res = minimize(fun = fun, args = args, x0 = x0, constraints = constraints, bounds = bounds)
+            res = minimize(fun = fun, args = args, x0 = x0, jac = jac, constraints = constraints, bounds = bounds)
             if res.success:
                 try:
                     if res.fun < best.fun:
@@ -240,11 +272,12 @@ def find_S(fun, hatq, hatp, n = 1, args = ()):
                     best = res
             if best:
                 best = np.reshape(best.x, (K,K))
+            print(best)
     return np.array(best)
 
 # After finding the optimal S, we can also report the optimal q for minimizing fun
 # n is the number of trials to find an optimum
-def find_q(fun, hatq, hatp, n=1, args = ()):
+def find_q(fun, hatq, hatp, n=1, args = (), jac = None):
     N = hatq.shape[0]
     K = hatq.shape[1]
     # Does the formula apply?
@@ -265,7 +298,7 @@ def find_q(fun, hatq, hatp, n=1, args = ()):
             res = res[1,0]
         res = np.array(res).reshape(N,K)
     else:
-        S = find_S(fun, hatq, hatp, n, args)
+        S = find_S(fun, hatq, hatp, n, args, jac = jac)
         if S is not None:
             S = np.reshape(S, (K,K))
         else:
@@ -277,7 +310,7 @@ def find_q(fun, hatq, hatp, n=1, args = ()):
 
 # After finding the optimal S, we can also report the optimal q for minimizing fun
 # n is the number of trials to find an optimum
-def find_p(fun, hatq, hatp, n=1, args = ()):
+def find_p(fun, hatq, hatp, n=1, args = (), jac = None):
     M = hatp.shape[0]
     K = hatp.shape[1]
     # Does the formula apply?
@@ -300,7 +333,7 @@ def find_p(fun, hatq, hatp, n=1, args = ()):
             res = res[1,0]
         res = np.array(res).reshape(M,K)
     else:
-        S = find_S(fun, hatq, hatp, n, args)
+        S = find_S(fun, hatq, hatp, n, args, jac)
         T = np.linalg.pinv(S) # more stable than .inv
         res = T.dot(hatp.T)
     # print(f"res = {res}")
@@ -328,14 +361,15 @@ if __name__ == "__main__":
     inds = [1 if i < first else 0 for i in range(N)]
     print(f"Minimizing the contribution of population 0 in the first {first} individuals in {default_STRUCTURE_path}:")
     # fun = (lambda x : mean_size(x, hatq, pop, inds))
-    print(find_S(mean_size, hatq, hatp, 10, (hatq, pop, inds)))
-    print(find_q(mean_size, hatq, hatp, 10, (hatq, pop, inds)))
-    print(find_p(mean_size, hatq, hatp, 10, (hatq, pop, inds)))
+    print(find_S(mean_size, hatq, hatp, 10, (hatq, pop, inds), mean_size_jac))
+    print("\n\n")
+    print(find_q(mean_size, hatq, hatp, 10, (hatq, pop, inds), mean_size_jac))
+    print(find_p(mean_size, hatq, hatp, 10, (hatq, pop, inds), mean_size_jac))
 
     print(f"Minimizing the entropy in the first {first} individuals in {default_STRUCTURE_path}:")
     # fun = (lambda x : mean_entropy(x, hatq, inds))
-    print(find_q(mean_entropy, hatq, hatp, 10, (hatq, inds)))
-    print(find_p(mean_entropy, hatq, hatp, 10, (hatq, inds)))
+    print(find_q(mean_entropy, hatq, hatp, 10, (hatq, inds), mean_entropy_jac))
+    print(find_p(mean_entropy, hatq, hatp, 10, (hatq, inds), mean_entropy_jac))
     
     print("Generating some random data (with fixed seed) with K=3.")
     # np.random.seed(41)
@@ -356,13 +390,13 @@ if __name__ == "__main__":
     print("Initial IAs:")
     print(hatq[0:9])
     print("Optimized IAs:")
-    print(find_q(neg_mean_size, hatq, hatp, 10, (hatq, pop))[0:9])
-    print(find_p(neg_mean_size, hatq, hatp, 10, (hatq, pop))[0:9])
+    print(find_q(neg_mean_size, hatq, hatp, 10, (hatq, pop), neg_mean_size_jac)[0:9])
+    print(find_p(neg_mean_size, hatq, hatp, 10, (hatq, pop), neg_mean_size_jac)[0:9])
     print("Maximizing the entropy in all individuals:")
     # fun = (lambda x : neg_mean_entropy(x, hatq, pop))
     print("Initial IAs:")
     print(hatq[0:9])
     print("Optimized IAs:")
-    print(find_p(neg_mean_entropy, hatq, hatp, 10, (hatq, pop))[0:9])
+    print(find_p(neg_mean_entropy, hatq, hatp, 10, (hatq, pop), neg_mean_entropy_jac)[0:9])
     print(hatp_dict)
 
