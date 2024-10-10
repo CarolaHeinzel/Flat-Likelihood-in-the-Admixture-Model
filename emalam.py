@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 from scipy.stats import entropy
 from scipy.optimize import minimize, LinearConstraint, NonlinearConstraint
-import re, argparse
+import re, argparse, itertools
 
 #################################################
 ## Importing data from a structure output file ## 
@@ -238,6 +238,30 @@ def get_UuVv(hatp, hatq):
     v = max(v, 1e-12)
     return U, u, V, v
 
+# Compute the distance of hatp and S^-1 hatp if usep and hatq S otherwise.
+def dist(S, hat, minp = False):
+    if minp:
+        T = np.linalg.pinv(S) # more stable than .inv        
+        return sum(abs((hat - T.dot(hat.T)).flatten()))
+    else: 
+        return sum(abs((hat - hat.dot(S)).flatten()))
+
+# Returns S with switched labels, such that qS or S^-1 p are closest to hatq or hatp, respectively.
+# hat is either hatq or hatp
+def switch_labels_for_minimal_distance(S, hat, minp = False):
+    K = hat.shape[1]
+    best = S
+    distbest = dist(S, hat, minp)
+    for perm in itertools.permutations(range(K)):
+        P = [[True if i == k else False for i in range(K)] for k in perm]
+        res = S.dot(np.array(P))
+        distres = dist(res, hat, minp)
+        if distres < distbest:
+            distbest = distres
+            best = res
+            #print("Labels are switched")
+    return best
+
 # Find the best S for minimizing fun using all constraints
 # For fun, we think of either of:
 # fun = mean_size with args = (hatq, pop, inds)
@@ -245,7 +269,7 @@ def get_UuVv(hatp, hatq):
 # fun = mean_entropy with args = (hatq, inds)
 # fun = neg_mean_entropy with args = (hatq, inds)
 # n is the number of trials, the best is taken
-def find_S(fun, hatq, hatp, n = 1, args = (), jac = None):
+def find_S(fun, hatq, hatp, n = 1, args = (), jac = None, switch_labels = True, minp = False):
     K = hatq.shape[1]
     if K != hatp.shape[1]:
         raise ValueError("In find_S, hatq and hatp must have the same number of columns")
@@ -271,7 +295,7 @@ def find_S(fun, hatq, hatp, n = 1, args = (), jac = None):
         best = None
         for _ in range(n):
             # x0 is close to the identity, but some U[-.2,.2] away
-            x0 = np.array([[np.random.uniform(-4/K, 4/K) for e in range(K)] for e in range(K)])
+            x0 = np.array([[np.random.uniform(-10/K, 10/K) for e in range(K)] for e in range(K)])
             x0 = np.identity(K) #+ x0
             # rows in x0 must be such that the corresponding S has row sum of 1
             x0 = (x0.dot(np.diag([1/z for z in x0.sum(axis=1)]))).flatten()
@@ -284,7 +308,10 @@ def find_S(fun, hatq, hatp, n = 1, args = (), jac = None):
                     best = res
             if best:
                 best = np.reshape(best.x, (K,K))
-            # print(best)
+        
+        if switch_labels:
+            best = switch_labels_for_minimal_distance(best, hatp, minp)
+
     return np.array(best)
 
 # After finding the optimal S, we can also report the optimal q for minimizing fun
@@ -351,7 +378,9 @@ def find_p(fun, hatq, hatp, n=1, args = (), jac = None):
     # print(f"res = {res}")
     return res
 
-
+############################
+## Functions for plotting ##
+############################
 
 def get_q_for_plot(q):
     N = q.shape[0]
@@ -418,7 +447,9 @@ if __name__ == "__main__":
     parser.add_argument("--max", action='store_true', help="The target function is maximized.")
     parser.add_argument("--n", type=str, help="Number of iterations for the optimization.", default = 1)
     parser.add_argument("--inds", nargs = '+', type=str, help="The individuals which are used for the target function. If no names are given, a number starting with 0 is used. If missing, optimization is over all individuals.")
-
+    parser.add_argument("--no_switch_labels", action='store_true', help="The optimum is given as is, and it is not checked if a relabeling of populations leads to a result which is closer to the input data. ")
+    parser.add_argument("--minp", action='store_true', help="Only effective if no_swith_labels is set. The distance to the input data is computed with respect to the optimal p (rather than the optimal q). ")
+    
     args = parser.parse_args()
 
     if not ((args.hatq_filename and args.hatp_filename) or args.structure_filename):
@@ -462,7 +493,9 @@ if __name__ == "__main__":
     else:
         inds = None
 
-    S_opt = find_S(f["fun"], hatq, hatp, args.n, (hatq, inds), f["jac"])
+    switch_labels = False if args.no_switch_labels else True
+    
+    S_opt = find_S(f["fun"], hatq, hatp, args.n, (hatq, inds), f["jac"], switch_labels, args.minp)
     q_opt = hatq.dot(S_opt)
     q_df, q_pivot = get_q_for_plot(q_opt)
     T_opt = np.linalg.pinv(S_opt)
