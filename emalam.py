@@ -468,9 +468,8 @@ if __name__ == "__main__":
     T_opt = np.linalg.pinv(S_opt)
     p_opt_dict = { key: value.dot(T_opt.T) for key, value in hatp_dict.items() } 
     p_df, p_pivot = get_p_for_plot(p_opt_dict)
-    print(p_pivot)
 
     q_pivot.to_csv(args.out[0], header = False, sep = ' ')
     p_pivot.to_csv(args.out[1], header = False, sep = ' ')
-    
+    print(f"The result is in {args.out[0]} (for Q) and {args.out[1]} (for P).")    
 
