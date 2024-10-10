@@ -41,9 +41,7 @@ def get_K(structure_file):
 # 0   (0.826) 0.542 0.999
 # return [0.542, 0.999] : np.array
 def get_data(line, K):
-    # print(line)
     l = line.strip().split(" ")
-    #print(l)
     return [float(x) for x in l[-K:]]
     
 # get p from structure file (as lines)
@@ -66,7 +64,6 @@ def get_p(lines):
             j = next((k for k, line in enumerate(output_text.splitlines()[i:], start=i+1) if " missing data" in line), None)
             k = next((l for l, line in enumerate(output_text.splitlines()[j:], start=j) if line.strip() == ""), None)
             # allele frequencies are in lines j:k
-            # print([get_data(line) for line in output_text.splitlines()[j:k]])
             res[marker] = np.array([get_data(line, K) for line in output_text.splitlines()[j:k]])
     return res
 
@@ -84,13 +81,12 @@ def get_q(lines):
     start_index = next((i for i, line in enumerate(output_text.splitlines()) if "Inferred ancestry of individuals:" in line), None)+2
     end_index = next((i for i, line in enumerate(output_text.splitlines()) if "Estimated Allele Frequencies in each cluster" in line), None) - 1
     extracted_lines = output_text.splitlines()[start_index:end_index]
-    # print(len(extracted_lines))
     for line in extracted_lines:
         if line != "":
             ind = line.split()[1]
             if ind in id.keys():
                 id[ind] += 1
-                # print(f"Identifier {ind} already taken. Using {ind}_{id[ind]} instead")
+                # Identifier {ind} already taken. Using {ind}_{id[ind]} instead
                 ind = f"{ind}_{id[ind]}"
             else:
                 id[ind] = 0
@@ -242,7 +238,7 @@ def get_UuVv(hatp, hatq):
 def dist(S, hat, minp = False):
     if minp:
         T = np.linalg.pinv(S) # more stable than .inv        
-        return sum(abs((hat - T.dot(hat.T)).flatten()))
+        return sum(abs((hat - hat.dot(T.T)).flatten()))
     else: 
         return sum(abs((hat - hat.dot(S)).flatten()))
 
@@ -259,7 +255,6 @@ def switch_labels_for_minimal_distance(S, hat, minp = False):
         if distres < distbest:
             distbest = distres
             best = res
-            #print("Labels are switched")
     return best
 
 # Find the best S for minimizing fun using all constraints
@@ -276,7 +271,6 @@ def find_S(fun, hatq, hatp, n = 1, args = (), jac = None, switch_labels = True, 
     # All entries in S cannot be smaller than -1 or larger than 1
     if K == 2 and (fun.__name__ == "mean_size" or fun.__name__ == "neg_mean_size"): 
         U, u, V, v = get_UuVv(hatp, hatq)
-        # print(f"U = {U}, u = {u}, V = {V}, v = {v}")
         if fun.__name__ == "mean_size":
             a = (1 + v) / (U + v)
             b = (1 - U) / (1 + U / v)
@@ -326,12 +320,10 @@ def find_q(fun, hatq, hatp, n=1, args = (), jac = None):
             hatq = hatq[:,[1,0]]
             hatp = hatp[:,[1,0]]
         U, u, V, v = get_UuVv(hatp, hatq)
-        # print(f"U = {U}, u = {u}, V = {V}, v = {v}")
         if fun.__name__ == "neg_mean_size":
             res = hatq[:, 0] * (1 + V)/(u + V) + hatq[:, 1] * (1 + V)/(1 + V / u)
         else:
             res = hatq[:, 0] * (U - 1)/(U - v) + hatq[:, 1] * (1 - U)/(1 + U / v)
-        # print(f"res vor b {res}")
         res = np.vstack([res, 1-res]).T
         if args[1] == 1:
             res = res[1,0]
@@ -344,7 +336,6 @@ def find_q(fun, hatq, hatp, n=1, args = (), jac = None):
             print("No optimum found. Proceeding with initial values.")
             S = np.identity(K)
         res = hatq.dot(S)    
-    # print(f"res = {res}")
     return res
 
 # After finding the optimal S, we can also report the optimal q for minimizing fun
@@ -359,14 +350,12 @@ def find_p(fun, hatq, hatp, n=1, args = (), jac = None):
             hatq = hatq[:,[1,0]]
             hatp = hatp[:,[1,0]]
         U, u, V, v = get_UuVv(hatp, hatq)
-        # print(f"U = {U}, u = {u}, V = {V}, v = {v}")
         res1 = hatp[:, 0] * (U)/( U - 1 ) + hatp[:, 1] * ( -1 )/( U - 1 )
         res2 = hatp[:, 0] * ( -V )/( 1 + V ) + hatp[:, 1] * ( 1 )/( 1 + V )
         if fun.__name__ == "neg_mean_size":
             res = np.minimum(res1, res2)
         else:
             res = np.maximum(res1, res2)
-        # print(f"res vor b {res}")
         res = np.vstack([res, 1-res]).T
         if args[1] == 1:
             res = res[1,0]
@@ -375,7 +364,6 @@ def find_p(fun, hatq, hatp, n=1, args = (), jac = None):
         S = find_S(fun, hatq, hatp, n, args, jac)
         T = np.linalg.pinv(S) # more stable than .inv
         res = T.dot(hatp.T)
-    # print(f"res = {res}")
     return res
 
 ############################
@@ -442,13 +430,13 @@ if __name__ == "__main__":
     parser.add_argument("--structure_filename", type=str, help="The input file name for structure data")
     parser.add_argument("--out", nargs = 2, type=str, help="The output filenames for the optimized parameters. (Both are csv files.)")
     parser.add_argument("--fun", type=str, help="The target function to optimize, must be entropy or size", default = "entropy")
-    parser.add_argument("--pop", type=str, help="If fun == size, the number of the population which is to be optimized.")
+    parser.add_argument("--pop", type=int, help="If fun == size, the number of the population which is to be optimized.")
     parser.add_argument("--min", action='store_true', help="The target function is minimized.")
     parser.add_argument("--max", action='store_true', help="The target function is maximized.")
-    parser.add_argument("--n", type=str, help="Number of iterations for the optimization.", default = 1)
+    parser.add_argument("--n", type=int, help="Number of iterations for the optimization.", default = 1)
     parser.add_argument("--inds", nargs = '+', type=str, help="The individuals which are used for the target function. If no names are given, a number starting with 0 is used. If missing, optimization is over all individuals.")
     parser.add_argument("--no_switch_labels", action='store_true', help="The optimum is given as is, and it is not checked if a relabeling of populations leads to a result which is closer to the input data. ")
-    parser.add_argument("--minp", action='store_true', help="Only effective if no_swith_labels is set. The distance to the input data is computed with respect to the optimal p (rather than the optimal q). ")
+    parser.add_argument("--minp", action='store_true', help="Only effective if no_swith_labels is not set. The distance to the input data is computed with respect to the optimal p (rather than the optimal q). ")
     
     args = parser.parse_args()
 
@@ -470,21 +458,6 @@ if __name__ == "__main__":
     hatp_df = to_df(hatp_dict)
     hatp = np.array(hatp_df)
     
-    if args.min and args.max:
-        raise ValueError("min and max must not be True simultaneously. ")
-    if args.fun == "entropy":
-        if args.min:
-            f = {"fun": mean_entropy, "jac": mean_entropy_jac}
-        elif args.max:
-            f = {"fun": neg_mean_entropy, "jac": neg_mean_entropy_jac}
-    elif args.fun == "size":
-        if args.min:
-            f = {"fun": mean_size, "jac": mean_size_jac}
-        elif args.max:
-            f = {"fun": neg_mean_size, "jac": neg_mean_size_jac}
-    else:
-        raise ValueError("fun must be 'entropy' or 'size'.")        
-    
     if args.inds:
         wrong_inds = [id for id in args.names if id not in ind_ids]
         if wrong_inds:
@@ -493,9 +466,30 @@ if __name__ == "__main__":
     else:
         inds = None
 
+    if args.fun == "size":
+        if args.pop:
+            pop = args.pop
+        else:
+            raise ValueError("For fun == size, please specify a population which is to be max/minimized.") 
+
+    if args.min and args.max:
+        raise ValueError("min and max must not be True simultaneously. ")
+    if args.fun == "entropy":
+        if args.min:
+            f = {"fun": mean_entropy, "jac": mean_entropy_jac, "args" : (hatq, inds)}
+        elif args.max:
+            f = {"fun": neg_mean_entropy, "jac": neg_mean_entropy_jac, "args" : (hatq, inds)}
+    elif args.fun == "size":
+        if args.min:
+            f = {"fun": mean_size, "jac": mean_size_jac, "args" : (hatq, pop, inds)}
+        elif args.max:
+            f = {"fun": neg_mean_size, "jac": neg_mean_size_jac, "args" : (hatq, pop, inds)}
+    else:
+        raise ValueError("fun must be 'entropy' or 'size'.")        
+    
     switch_labels = False if args.no_switch_labels else True
     
-    S_opt = find_S(f["fun"], hatq, hatp, args.n, (hatq, inds), f["jac"], switch_labels, args.minp)
+    S_opt = find_S(f["fun"], hatq, hatp, args.n, f["args"], f["jac"], switch_labels, args.minp)
     q_opt = hatq.dot(S_opt)
     q_df, q_pivot = get_q_for_plot(q_opt)
     T_opt = np.linalg.pinv(S_opt)
