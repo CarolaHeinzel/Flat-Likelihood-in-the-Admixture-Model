@@ -8,7 +8,7 @@ or the graphical version
 ```
 streamlit run EMALAM.py
 ```
-which is displayed in your browser. Another online version is available under xxx.
+which is displayed in your browser. Another online version is available under https://flat-likelihood-in-the-admixture-model-p4vvpwxjdtteu3prahatyj.streamlit.app/.
 
 
 # Flat-Likelihood-in-the-Admixture-Model
