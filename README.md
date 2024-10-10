@@ -9,6 +9,8 @@ or the graphical version
 streamlit run EMALAM.py
 ```
 which is displayed in your browser. Another online version is available under xxx.
+The code is tested with python 3.12.
+
 
 
 # Flat-Likelihood-in-the-Admixture-Model

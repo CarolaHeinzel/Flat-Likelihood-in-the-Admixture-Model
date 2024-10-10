@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 from scipy.stats import entropy
 from scipy.optimize import minimize, LinearConstraint, NonlinearConstraint
-import re, json, argparse
+import re, argparse
 
 #################################################
 ## Importing data from a structure output file ## 
@@ -351,22 +351,73 @@ def find_p(fun, hatq, hatp, n=1, args = (), jac = None):
     # print(f"res = {res}")
     return res
 
+
+
+def get_q_for_plot(q):
+    N = q.shape[0]
+    K = q.shape[1]    
+    q_df = pd.DataFrame({
+                    "ia": [x for qi in q for x in qi],
+                    "ind": [x for i in range(N) for x in [i]*K],
+                    "pop": [ j for i in range(N) for j in range(K)]
+                })
+    pivot_df = q_df.pivot(index='ind', columns='pop', values='ia')
+    return q_df, pivot_df
+
+def get_K_from_hatp_dict(hatp_dict):
+    first_key = next(iter(hatp_dict))  # Erster Key
+    first_value = hatp_dict[first_key]  # Erster Value
+    return first_value.shape[1]
+
+def get_p_for_plot(hatp_dict):
+    K = get_K_from_hatp_dict(hatp_dict)
+    M = len(hatp_dict.keys())
+    # reformat marker names if they are ints
+    try:
+        hatp_dict = { int(key): value for key, value in hatp_dict.items()}
+        m = max(hatp_dict.keys())
+        hatp_dict = { f"{key:{len(str(m))}}": value for key, value in hatp_dict.items()}
+    except:
+        pass
+    
+    marker = []
+    for k in range(K):
+        for key, value in hatp_dict.items():
+            J = value.shape[0]
+            if J > 1:
+                for j in range(J):
+                    marker.append({
+                        "id": key,
+                        "p": hatp_dict[key][j,k],
+                        "allele": j,
+                        "pop": k,
+                        "id.allele": f"{key}.{j}"
+                    })
+
+
+    p_df  = pd.DataFrame(marker)
+    # st.write(p_df)
+    pivot_df = p_df.pivot(index='id.allele', columns='pop', values='p')
+    return p_df, pivot_df
+
+
 # Command line tool
-# example
-# python emalam.py --structure_filename Example_Input/CEU_IBS_TSI_enhanced_corr_K3_f --out out.txt out.json --fun entropy --min 
+# Examples:
+# python emalam.py --structure_filename Example_Input/CEU_IBS_TSI_enhanced_corr_K3_f --out out.Q out.P --fun entropy --min 
+# python emalam.py --hatq_filename Example_Input/p_K3 --hatp_filename Example_Input/q_K3 --out out.Q out.P --fun entropy --min | less
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Process input file names.")
     parser.add_argument("--hatq_filename", type=str, help="The input file name for hatq")
     parser.add_argument("--hatp_filename", type=str, help="The input file name for hatp")
     parser.add_argument("--structure_filename", type=str, help="The input file name for structure data")
-    parser.add_argument("--out", nargs = 2, type=str, help="The output filenames for the optimized parameters. (Q is a csv, P is a json.)")
+    parser.add_argument("--out", nargs = 2, type=str, help="The output filenames for the optimized parameters. (Both are csv files.)")
     parser.add_argument("--fun", type=str, help="The target function to optimize, must be entropy or size", default = "entropy")
     parser.add_argument("--pop", type=str, help="If fun == size, the number of the population which is to be optimized.")
     parser.add_argument("--min", action='store_true', help="The target function is minimized.")
     parser.add_argument("--max", action='store_true', help="The target function is maximized.")
     parser.add_argument("--n", type=str, help="Number of iterations for the optimization.", default = 1)
-    parser.add_argument("--inds", nargs = '+', type=str, help="The individuals which are used for the target function. If missing, optimization is over all individuals.")
+    parser.add_argument("--inds", nargs = '+', type=str, help="The individuals which are used for the target function. If no names are given, a number starting with 0 is used. If missing, optimization is over all individuals.")
 
     args = parser.parse_args()
 
@@ -381,7 +432,8 @@ if __name__ == "__main__":
         hatp_dict = get_p(lines)
     else:
         hatq = np.array(load_q_file(args.hatq_filename))
-        ind_ids = range(hatq.shape[0])
+        N = hatq.shape[0]
+        ind_ids = range(N) 
         hatp_dict = load_p_file(args.hatp_filename)
 
     hatp_df = to_df(hatp_dict)
@@ -412,11 +464,13 @@ if __name__ == "__main__":
 
     S_opt = find_S(f["fun"], hatq, hatp, args.n, (hatq, inds), f["jac"])
     q_opt = hatq.dot(S_opt)
+    q_df, q_pivot = get_q_for_plot(q_opt)
     T_opt = np.linalg.pinv(S_opt)
-    p_opt_dict = { key: pd.DataFrame(value.dot(T_opt.T)).to_json() for key, value in hatp_dict.items() } 
+    p_opt_dict = { key: value.dot(T_opt.T) for key, value in hatp_dict.items() } 
+    p_df, p_pivot = get_p_for_plot(p_opt_dict)
+    print(p_pivot)
 
-    np.savetxt(args.out[0], q_opt, delimiter=' ')
-    with open(args.out[1], 'w') as p_file:
-        json.dump(p_opt_dict, p_file, indent=4)
-
+    q_pivot.to_csv(args.out[0], header = False, sep = ' ')
+    p_pivot.to_csv(args.out[1], header = False, sep = ' ')
+    
 

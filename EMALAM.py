@@ -4,42 +4,16 @@ import altair as alt
 import pandas as pd
 import emalam as em
 
-def plot_q_all(q):
-    N = q.shape[0]
-    K = q.shape[1]    
-    q_df = pd.DataFrame({
-                    "ia": [x for qi in q for x in qi],
-                    "ind": [x for i in range(N) for x in [i]*K],
-                    "pop": [ j for i in range(N) for j in range(K)]
-                })
+def plot_q(q_df):
     st.altair_chart(alt.Chart(q_df).mark_bar().encode(
         x=alt.X("ind:N", sort=None, title=""),
         y=alt.Y("ia:Q", sort = 'descending', title="", scale=alt.Scale(domain=[0, 1])),
         color=alt.Color('pop:N', scale=alt.Scale(scheme='category10')),
         tooltip=['pop:N', 'ia:Q']  
-    ).properties(), use_container_width=True)
-    pivot_df = q_df.pivot(index='ind', columns='pop', values='ia')
-    return pivot_df
+    ).properties(), use_container_width=True)                    
 
-def plot_p_all(hatp_dict):
-    first_key = next(iter(hatp_dict))  # Erster Key
-    first_value = hatp_dict[first_key]  # Erster Value
-    K = first_value.shape[1]
-    marker = []
-    for k in range(K):
-        for key, value in hatp_dict.items():
-            J = value.shape[0]
-            if J > 1:
-                for j in range(J):
-                    marker.append({
-                        "id": key,
-                        "p": hatp_dict[key][j,k],
-                        "allele": j,
-                        "pop": k,
-                        "id.allele": f"{key}.{j}"
-                    })
-    p_df  = pd.DataFrame(marker)
-    # st.write(p_df)
+def plot_p(p_df):
+    K = em.get_K_from_hatp_dict(hatp_dict)
     for k in range(K):
         st.write(f"Population {k}")
         st.altair_chart(alt.Chart(p_df[p_df["pop"] == k]).mark_bar().encode(
@@ -48,8 +22,6 @@ def plot_p_all(hatp_dict):
             color=alt.Color('allele:N', scale=alt.Scale(scheme='category10')),
             tooltip=['marker:N', 'allele:N', 'p:Q']  
         ).properties(), use_container_width=True)
-    pivot_df = p_df.pivot(index='id.allele', columns='pop', values='p')
-    return pivot_df
 
 default_structure_path_K3 = 'Example_Input/CEU_IBS_TSI_enhanced_corr_K3_f'
 default_structure_path_K3_url = "https://github.com/CarolaHeinzel/Flat-Likelihood-in-the-Admixture-Model/blob/main/Example_Input/CEU_IBS_TSI_enhanced_corr_K3_f"
@@ -114,7 +86,6 @@ default = st.radio(
 if default == default_options[0]:
     use_structure_file = True
     lines = em.load_structure_file(default_structure_path_K3)
-
 
 if default == default_options[1]:
     use_structure_file = True
@@ -259,25 +230,29 @@ if cont: # lines is not None:
                             tooltip=['pop:N', 'ia:Q']  
                         ).properties(width=700), use_container_width=False)
 
+
             else:
                 st.write("## Individual admixtures of all individuals")
                 st.write(f"N = {N}, K = {K}, M = {M}")
                 st.write("#### Initial values")
                 col0, col1 = st.columns([10,2])
+                q_df, hatq_pivot = em.get_q_for_plot(hatq)
                 with col0:
-                    hatq_pivot = plot_q_all(hatq)
+                    plot_q(q_df)
                 with col1:
                     st.write(hatq_pivot)
                 st.write("#### Minimum")
                 col0, col1 = st.columns([10,2])
+                q_df, hatq_pivot = em.get_q_for_plot(q_min)
                 with col0:
-                    hatq_pivot = plot_q_all(q_min)
+                    plot_q(q_df)
                 with col1:
                     st.write(hatq_pivot)
                 st.write("#### Maximum")
                 col0, col1 = st.columns([10,2])
+                q_df, hatq_pivot = em.get_q_for_plot(q_max)
                 with col0:
-                    hatq_pivot = plot_q_all(q_max)
+                    plot_q(q_df)
                 with col1:
                     st.write(hatq_pivot)
 
@@ -290,20 +265,23 @@ if cont: # lines is not None:
 
                 st.write("#### Initial values")
                 col0, col1 = st.columns([10,2])
+                p_df, hatp_pivot = em.get_p_for_plot(hatp_dict)
                 with col0:
-                    hatp_pivot = plot_p_all(hatp_dict)
+                    plot_p(p_df)
                 with col1:
                     st.write(hatp_pivot)
                 st.write("#### p for minimal target function")
                 col0, col1 = st.columns([10,2])
+                p_df, hatp_pivot = em.get_p_for_plot(p_min_dict)
                 with col0:
-                    hatp_pivot = plot_p_all(p_min_dict)
+                    plot_p(p_df)
                 with col1:
                     st.write(hatp_pivot)
                 st.write("#### p for maximal target function")
+                p_df, hatp_pivot = em.get_p_for_plot(p_max_dict)
                 col0, col1 = st.columns([10,2])
                 with col0:
-                    hatp_pivot = plot_p_all(p_max_dict)
+                    plot_p(p_df)
                 with col1:
                     st.write(hatp_pivot)
 
