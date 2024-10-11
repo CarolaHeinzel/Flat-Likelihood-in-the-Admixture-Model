@@ -1,12 +1,10 @@
 import pandas as pd
 import numpy as np
 
-file1 = "C:\\Users\\carol\\Downloads\\q_minimal.csv"  
-file2 = "C:\\Users\\carol\\Downloads\\p_minimal.csv"  
+file1 = "q_minimal.csv"  
+file2 = "p_minimal.csv"  
 data1_min = pd.read_csv(file1).iloc[:, 1:4] 
 data2_min = pd.read_csv(file2).iloc[:, 1:4]
-
-#%%
 
 results = []
 
@@ -21,10 +19,8 @@ results_array = np.array(results)
 print("Skalarprodukte:")
 print(results_array)
 
-
-#%%
-file1 = "C:\\Users\\carol\\Downloads\\q_initial.csv"  
-file2 = "C:\\Users\\carol\\Downloads\\p_initial.csv"  
+file1 = "q_initial.csv"  
+file2 = "p_initial.csv"  
 data1 = pd.read_csv(file1).iloc[:, 1:4] 
 data2 = pd.read_csv(file2).iloc[:, 1:4]
 
