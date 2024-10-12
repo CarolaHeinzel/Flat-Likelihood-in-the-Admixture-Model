@@ -287,7 +287,7 @@ def find_S(fun, hatq, hatp, n = 1, args = (), jac = None, switch_labels = True, 
             NonlinearConstraint(lambda x: function_for_nonlinear_constraint(x, hatp), 0, np.inf)
             ]
         best = None
-        random.seed(22)
+        np.random.seed(22)
         for _ in range(n):
             # x0 is close to the identity, but some U[-.2,.2] away
             x0 = np.array([[np.random.uniform(-10/K, 10/K) for e in range(K)] for e in range(K)])
