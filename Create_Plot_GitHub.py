@@ -102,7 +102,7 @@ def plot_q_values(data_files, colors, vertical_lines, output_file="plot.pdf"):
     plt.savefig(output_file)
     plt.show()
 
-data_files = ["Q_output.txt", "data_alignment2.txt"]  # Liste der .txt-Dateien
+data_files = ["Q_output.txt", "data_alignment2.txt"]  
 colors = ['red', 'blue', 'green', 'orange', "purple"]  
 vertical_lines = [1.5, 2.5]  
 
