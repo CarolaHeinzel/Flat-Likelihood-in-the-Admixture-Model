@@ -6,7 +6,7 @@ python emalam.py --structure_filename Example_Input/CEU_IBS_TSI_enhanced_corr_K3
 ```
 or (for ADMIXTURE output)
 ```
-python emalam.py --hatq_filename combined_filtereed_carola2.3.Q --hatp_filename combined_filtereed_carola2.3.P --out outEURmax.Q outEURmax.P --fun size --pop 2 --max
+python emalam.py --hatq_filename combined_filtered.3.Q --hatp_filename combined_filtered.3.P --out outEURmax.Q outEURmax.P --fun size --pop 2 --max
 ```
 or the graphical version
 ```
