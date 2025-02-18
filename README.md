@@ -13,10 +13,8 @@ or the graphical version
 streamlit run EMALAM.py
 ```
 
-which is displayed in your browser. Another online version is available under xxx.
+which is displayed in your browser. Another online version is available under [streamlit](https://flat-likelihood-in-the-admixture-model-p4vvpwxjdtteu3prahatyj.streamlit.app/).
 The code is tested with python 3.12.
-
-which is displayed in your browser. Another online version is available under https://flat-likelihood-in-the-admixture-model-p4vvpwxjdtteu3prahatyj.streamlit.app/.
  
 # User Choices
 
