@@ -1,7 +1,7 @@
 import pandas as pd
 # This code convets a .vcf file to a file that has the correct input for STRUCTURE
 #%%
-vcf_file = '/home/ch1158/combined_output_IBS_TSI_CEU.vcf'
+vcf_file = 'combined_output_IBS_TSI_CEU.vcf'
         
 # Read the Data
 vcf_data = []
