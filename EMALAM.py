@@ -64,7 +64,7 @@ if "ids" not in st.session_state:
 lines = None
 
 st.header("EMALAM")
-st.write("See [biorxiv](https://www.biorxiv.org/content/10.1101/2024.10.18.619150v1) for a reference what this webpage is about.")
+st.write("See [biorxiv](https://www.biorxiv.org/content/10.1101/2024.10.18.619150v1) for a reference what this webpage is about. Instructions how to use streamlit can be found on our [GitHub Website](https://github.com/CarolaHeinzel/Flat-Likelihood-in-the-Admixture-Model).")
 
 ################################
 ## Choose which input is used ##
