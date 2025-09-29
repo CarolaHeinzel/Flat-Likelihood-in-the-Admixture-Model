@@ -26,7 +26,9 @@ To depict the results, you can use the Code Create_Figures.py. This plots the es
 
 
 
+### Funding Acknowledgement
 
+Funded by the Deutsche Forschungsgemeinschaft (DFG, German Research Foundation) – Project-ID 499552394 – SFB 1597.
 
 
 
